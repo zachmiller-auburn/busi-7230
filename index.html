@@ -23,7 +23,10 @@
   (function () {
     try {
       var stored = localStorage.getItem('bb-theme'); // 'light' | 'dark' | null
-      var theme = stored || 'light';
+      var prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+      var theme = (stored === 'light' || stored === 'dark')
+        ? stored
+        : (prefersDark ? 'dark' : 'light');
       document.documentElement.setAttribute('data-theme', theme);
       var meta = document.querySelector('meta[name="theme-color"]');
       if (meta) meta.setAttribute('content', theme === 'dark' ? '#0B1220' : '#F5F0E8');
@@ -1437,7 +1440,7 @@
   Formulas
 </button>
 <aside id="formulas-panel" class="formulas-panel" role="region" aria-label="Quick-reference formulas" hidden>
-  <h3>Quick-reference formulas</h3>
+  <h3 id="formulas-heading" tabindex="-1">Quick-reference formulas</h3>
   <dl>
     <dt>Revenue variance</dt>
     <dd><code>Actual Revenue − Budgeted Revenue</code><br>Positive = Favorable (F). Negative = Unfavorable (U).</dd>
@@ -1477,6 +1480,19 @@ const fu = (n, kind) => {
   if (n === 0) return '';
   if (kind === 'rev') return n >= 0 ? 'F' : 'U';
   return n >= 0 ? 'U' : 'F';
+};
+const q2Snapshot = (s) => {
+  const Q2_REVENUE_REALIZATION = 0.855; // ~14.5% revenue miss versus budget
+  const Q2_VC_BUDGET_RATIO = 0.4; // budget assumes VC at 40% of revenue
+  const Q2_VC_REALIZATION = 0.925; // actual VC comes in slightly favorable vs VC budget
+  const revTarget = s.decisions[0]?.rev_target || 480000;
+  const fcBudget = s.decisions[0]?.fc_budget || 290000;
+  const q2Bud = Math.round(revTarget / 4);
+  const q2Actual = Math.round(q2Bud * Q2_REVENUE_REALIZATION / 1000) * 1000; // apply revenue realization factor, then round to nearest $1,000
+  const q2VcBud = Math.round(q2Bud * Q2_VC_BUDGET_RATIO);
+  const q2VcAct = Math.round(q2VcBud * Q2_VC_REALIZATION / 1000) * 1000;
+  const q2FcBud = Math.round(fcBudget / 4);
+  return { q2Bud, q2Actual, q2VcBud, q2VcAct, q2FcBud };
 };
 
 // ---------------------------------------------------------------------------
@@ -1566,11 +1582,7 @@ const QUARTERS = [
     n: 2,
     subtitle: 'Variance analysis — who owns the miss?',
     scenario: (s) => {
-      const target = s.decisions[0]?.rev_target || 480000;
-      const q2Bud = Math.round(target / 4);
-      const q2Actual = Math.round(q2Bud * 0.855 / 1000) * 1000; // ~14.5% revenue miss, scaled to the student's plan
-      const q2VcBud = Math.round(q2Bud * 0.4);
-      const q2VcAct = Math.round(q2VcBud * 0.925 / 1000) * 1000; // VC slightly favorable on lower volume
+      const { q2Bud, q2Actual, q2VcBud, q2VcAct } = q2Snapshot(s);
       return `
         <p>It\'s early April. Q2 just closed. Your annual plan prorated to a <strong>${fmt(q2Bud)}</strong> quarterly revenue budget. A new competitor opened two blocks down in February, and your Q2 actuals came in:</p>
         <p><strong>Revenue: ${fmt(q2Actual)}.</strong> Variable costs ran <strong>${fmt(q2VcAct)}</strong> against a budget of <strong>${fmt(q2VcBud)}</strong>. Fixed costs landed roughly on plan.</p>
@@ -1584,11 +1596,7 @@ const QUARTERS = [
       objective: 'By the end of Q2 you should be able to: (1) compute revenue, variable cost, and fixed cost variances, (2) apply the F/U sign convention correctly, and (3) calculate the net impact on operating income using ΔOI = ΔRev − ΔCost.',
     },
     micro: (s) => {
-      const target = s.decisions[0]?.rev_target || 480000;
-      const q2Bud = Math.round(target / 4);
-      const vcBud = Math.round(q2Bud * 0.4);
-      const q2Actual = Math.round(q2Bud * 0.855 / 1000) * 1000;
-      const vcAct = Math.round(vcBud * 0.925 / 1000) * 1000;
+      const { q2Bud, q2Actual, q2VcBud: vcBud, q2VcAct: vcAct } = q2Snapshot(s);
       const revVar = q2Actual - q2Bud;
       const vcVar = vcAct - vcBud;
       const oiImpact = revVar - vcVar;
@@ -1664,11 +1672,7 @@ const QUARTERS = [
         },
       ],
       evaluate(choice, s) {
-        const target = s.decisions[0]?.rev_target || 480000;
-        const q2Bud = Math.round(target / 4);
-        const vcBud = Math.round(q2Bud * 0.4);
-        const q2Actual = Math.round(q2Bud * 0.855 / 1000) * 1000;
-        const vcAct = Math.round(vcBud * 0.925 / 1000) * 1000;
+        const { q2Bud, q2Actual, q2VcBud: vcBud, q2VcAct: vcAct } = q2Snapshot(s);
         const revVar = q2Actual - q2Bud;
         const vcVar = vcAct - vcBud;
         const oiImpact = revVar - vcVar;
@@ -2548,7 +2552,10 @@ function submitQuarter(qIdx) {
 
   // Update cash per quarter (narrative approx)
   if (qIdx === 0) state.cash += 0;
-  else if (qIdx === 1) state.cash += Math.round((118000 - 51000 - 30000)); // rough Q2 cash
+  else if (qIdx === 1) {
+    const { q2Actual, q2VcAct, q2FcBud } = q2Snapshot(state);
+    state.cash += Math.round(q2Actual - q2VcAct - q2FcBud); // rough Q2 cash
+  }
   else if (qIdx === 2) state.cash += -37000;
   else state.cash += 40000;
 
@@ -2664,15 +2671,16 @@ function render() {
     toggle.setAttribute('aria-label', 'Switch to ' + next + ' mode');
   }
   function applyTheme(theme, persist) {
-    document.documentElement.setAttribute('data-theme', theme);
+    const normalizedTheme = theme === 'dark' ? 'dark' : 'light';
+    document.documentElement.setAttribute('data-theme', normalizedTheme);
     const meta = document.getElementById('meta-theme-color');
-    if (meta) meta.setAttribute('content', theme === 'dark' ? '#0B1220' : '#F5F0E8');
+    if (meta) meta.setAttribute('content', normalizedTheme === 'dark' ? '#0B1220' : '#F5F0E8');
     if (persist) {
-      try { localStorage.setItem('bb-theme', theme); } catch (_) {}
+      try { localStorage.setItem('bb-theme', normalizedTheme); } catch (_) {}
     }
     updateLabel();
     const live = document.getElementById('live-region');
-    if (live) live.textContent = theme === 'dark' ? 'Dark mode on.' : 'Light mode on.';
+    if (live) live.textContent = normalizedTheme === 'dark' ? 'Dark mode on.' : 'Light mode on.';
   }
 
   updateLabel();
@@ -2681,6 +2689,15 @@ function render() {
     applyTheme(currentTheme() === 'dark' ? 'light' : 'dark', true);
   });
 
+  if (window.matchMedia) {
+    const mq = window.matchMedia('(prefers-color-scheme: dark)');
+    const listener = (e) => {
+      try { if (localStorage.getItem('bb-theme')) return; } catch (_) {}
+      applyTheme(e.matches ? 'dark' : 'light', false);
+    };
+    if (mq.addEventListener) mq.addEventListener('change', listener);
+    else if (mq.addListener) mq.addListener(listener);
+  }
 })();
 
 function updateFormulasVisibility() {
@@ -2695,29 +2712,36 @@ function updateFormulasVisibility() {
   }
 }
 
+function setFormulasOpen(open, restoreFocus) {
+  const toggle = document.getElementById('formulas-toggle');
+  const panel = document.getElementById('formulas-panel');
+  if (!toggle || !panel) return;
+  panel.hidden = !open;
+  toggle.setAttribute('aria-expanded', String(open));
+  if (open) {
+    const heading = document.getElementById('formulas-heading');
+    if (heading) heading.focus();
+  } else if (restoreFocus) {
+    toggle.focus();
+  }
+}
+
 document.addEventListener('click', (e) => {
   const toggle = document.getElementById('formulas-toggle');
   const panel = document.getElementById('formulas-panel');
   if (!toggle || !panel) return;
   if (e.target === toggle || toggle.contains(e.target)) {
-    const open = panel.hidden;
-    panel.hidden = !open;
-    toggle.setAttribute('aria-expanded', String(open));
+    setFormulasOpen(panel.hidden, false);
     return;
   }
   if (!panel.hidden && !panel.contains(e.target)) {
-    panel.hidden = true;
-    toggle.setAttribute('aria-expanded', 'false');
+    setFormulasOpen(false, false);
   }
 });
 document.addEventListener('keydown', (e) => {
   if (e.key !== 'Escape') return;
   const panel = document.getElementById('formulas-panel');
-  const toggle = document.getElementById('formulas-toggle');
-  if (panel && !panel.hidden) {
-    panel.hidden = true;
-    if (toggle) toggle.setAttribute('aria-expanded', 'false');
-  }
+  if (panel && !panel.hidden) setFormulasOpen(false, true);
 });
 
 /* Scroll behavior — only scroll on screen transitions or explicit submit.
