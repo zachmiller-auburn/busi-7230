@@ -1,6 +1,6 @@
 # Budget Boss — Crestline Coffee Co.
 
-An interactive budgeting and forecasting simulation built for **BUSI-7230: MBA Core Accounting** at Auburn University.
+An interactive budgeting and forecasting simulation built for **BUSI-7230: Cost Analysis & Systems** at Auburn University.
 
 Players take on the role of General Manager at Crestline Coffee Co., a fictional specialty coffee roaster, and navigate four quarters of real-world accounting decisions — from setting an annual budget to diagnosing variances, managing cash flow, and anchoring next year's plan.
 
@@ -39,8 +39,9 @@ Each quarter includes **check-your-understanding questions** (5 pts) and a **str
 
 ## Course
 
-**BUSI-7230 — MBA Core Accounting**
+**BUSI-7230 — Cost Analysis & Systems**
 Harbert College of Business, Auburn University
+Dr. Duane Brandon
 
 ## Tech Stack
 
