@@ -2290,7 +2290,7 @@ function buildSlider(inp, qIdx, locked) {
   const head = el('div', { className: 'slider-head' });
   const meta = el('div');
   meta.appendChild(el('label', { className: 'slider-label', for: 'num-' + inp.id }, inp.label));
-  meta.appendChild(el('div', { className: 'slider-desc' }, inp.desc));
+  meta.appendChild(el('div', { className: 'slider-desc', html: inp.desc }));
   head.appendChild(meta);
 
   // Determine current value
@@ -2689,13 +2689,10 @@ function render() {
     applyTheme(currentTheme() === 'dark' ? 'light' : 'dark', true);
   });
 
-  // Follow system changes only when the user hasn't manually overridden.
   if (window.matchMedia) {
     const mq = window.matchMedia('(prefers-color-scheme: dark)');
     const listener = (e) => {
-      try {
-        if (localStorage.getItem('bb-theme')) return; // user override wins
-      } catch (_) {}
+      try { if (localStorage.getItem('bb-theme')) return; } catch (_) {}
       applyTheme(e.matches ? 'dark' : 'light', false);
     };
     if (mq.addEventListener) mq.addEventListener('change', listener);
