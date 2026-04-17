@@ -1,0 +1,44 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630" role="img" aria-labelledby="title desc">
+  <title id="title">Budget Boss - Crestline Coffee Co.</title>
+  <desc id="desc">BUSI-7230 Cost Analysis and Systems interactive accounting simulation.</desc>
+  <defs>
+    <linearGradient id="bgGrad" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#FAF7F2" />
+      <stop offset="100%" stop-color="#F5E6CF" />
+    </linearGradient>
+    <filter id="softShadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="8" stdDeviation="14" flood-color="#1C1410" flood-opacity="0.14"/>
+    </filter>
+  </defs>
+
+  <rect width="1200" height="630" fill="#F5F0E8"/>
+  <rect x="28" y="28" width="1144" height="574" rx="28" fill="url(#bgGrad)" stroke="#8A7968" stroke-opacity="0.24"/>
+
+  <circle cx="1040" cy="120" r="96" fill="#E8C99A" opacity="0.45"/>
+  <circle cx="140" cy="540" r="120" fill="#E8C99A" opacity="0.28"/>
+
+  <g filter="url(#softShadow)">
+    <rect x="86" y="92" width="1028" height="446" rx="24" fill="#FAF7F2" stroke="#6B5A4C" stroke-opacity="0.22"/>
+  </g>
+
+  <text x="132" y="152" font-family="'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="24" letter-spacing="3.5" fill="#B67633">BUSI-7230 COST ANALYSIS &amp; SYSTEMS</text>
+
+  <text x="132" y="250" font-family="'Instrument Serif', Georgia, serif" font-size="106" fill="#1C1410" letter-spacing="-1.2">Budget <tspan fill="#B67633" font-style="italic">Boss</tspan></text>
+  <text x="132" y="312" font-family="'Instrument Serif', Georgia, serif" font-size="40" fill="#3D2314">Crestline Coffee Co.</text>
+
+  <text x="132" y="382" font-family="'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="30" fill="#6B5A4C">
+    Budgeting, variance analysis, and cash-flow strategy
+  </text>
+  <text x="132" y="426" font-family="'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="30" fill="#6B5A4C">
+    in a four-quarter interactive simulation.
+  </text>
+
+  <g transform="translate(860 404)">
+    <rect x="0" y="0" width="206" height="78" rx="39" fill="#1C1410"/>
+    <text x="103" y="50" text-anchor="middle" font-family="'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="28" fill="#FAF7F2">Play Now</text>
+  </g>
+
+  <text x="132" y="494" font-family="'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="21" fill="#8A7968">
+    Team: Zach Miller | Elaura Hodgetts | Michael Phifer | Carl Pittman
+  </text>
+</svg>
