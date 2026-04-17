@@ -16,8 +16,23 @@
 <meta name="twitter:title" content="Budget Boss — Crestline Coffee Co.">
 <meta name="twitter:description" content="Interactive accounting game for BUSI-7230 Cost Analysis & Systems.">
 <meta name="twitter:image" content="https://zachmiller-auburn.github.io/busi-7230/social-preview.png">
-<meta name="theme-color" content="#F5F0E8">
+<meta name="theme-color" content="#F5F0E8" id="meta-theme-color">
 <title>Budget Boss — Crestline Coffee Co.</title>
+<script>
+  // Apply theme ASAP to prevent flash-of-wrong-theme on load.
+  (function () {
+    try {
+      var stored = localStorage.getItem('bb-theme'); // 'light' | 'dark' | null
+      var prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+      var theme = (stored === 'light' || stored === 'dark')
+        ? stored
+        : (prefersDark ? 'dark' : 'light');
+      document.documentElement.setAttribute('data-theme', theme);
+      var meta = document.querySelector('meta[name="theme-color"]');
+      if (meta) meta.setAttribute('content', theme === 'dark' ? '#0B1220' : '#F5F0E8');
+    } catch (_) { /* no-op — default stylesheet handles light */ }
+  })();
+</script>
 <link rel="icon" type="image/svg+xml" href="favicon.svg">
 <link rel="icon" type="image/png" sizes="32x32" href="favicon-32x32.png">
 <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
@@ -53,6 +68,12 @@
     --shadow-sm: 0 1px 2px rgba(28,20,16,0.04);
     --shadow: 0 2px 14px rgba(28,20,16,0.08);
     --shadow-lg: 0 8px 32px rgba(28,20,16,0.12);
+    --header-bg: rgba(245,240,232,0.94);
+    /* Halo accent — primarily used in dark mode; in light mode it inherits caramel so code that references it still reads correctly. */
+    --halo: #B67633;
+    --halo-tint: rgba(182,118,51,0.18);
+    --halo-glow: 0 0 0 3px rgba(182,118,51,0.28);
+    --scheme: light;
 
     /* Spacing (4px grid) */
     --s-1: 4px;
@@ -88,7 +109,80 @@
     --dur-base: 240ms;
   }
 
+  /* =========================================================================
+     DARK MODE — dark navy ground with a brighter navy halo accent.
+     Caramel/roast warmth is preserved so the "coffee" identity still reads.
+     All text pairings verified ≥ 4.5:1 for WCAG 2.1 AA.
+     ========================================================================= */
+  [data-theme="dark"] {
+    --cream: #0B1220;              /* app background — deep navy */
+    --foam: #131E33;               /* elevated surface — navy card */
+    --espresso: #EAE6E0;           /* was darkest ink; flipped to warm off-white for headings on dark */
+    --roast: #F5E6CF;              /* hover ink — slight caramel shift */
+    --caramel: #E8B074;            /* lifted caramel for AA on navy (~8:1) */
+    --caramel-light: #F0C48A;
+    --caramel-tint: #1E2A44;       /* chip background — navy with halo hue */
+    --text: #EAE6E0;               /* ~16:1 on --cream */
+    --text-muted: #A8B3C7;         /* ~8.5:1 on --cream */
+    --text-faint: #7A8699;
+    --success: #7BC48D;            /* ~9:1 on --cream */
+    --success-bg: #15291F;
+    --warn: #E8C869;
+    --warn-bg: #2A2214;
+    --danger: #EA9292;
+    --danger-bg: #2A1616;
+    --border: rgba(200,215,240,0.14);
+    --border-strong: rgba(200,215,240,0.28);
+    --shadow-sm: 0 1px 2px rgba(0,0,0,0.30);
+    --shadow: 0 2px 14px rgba(0,0,0,0.45);
+    --shadow-lg: 0 8px 32px rgba(0,0,0,0.60);
+    --header-bg: rgba(11,18,32,0.88);
+    --halo: #6AA8FF;               /* brighter navy halo */
+    --halo-tint: rgba(106,168,255,0.16);
+    --halo-glow: 0 0 0 3px rgba(106,168,255,0.35), 0 0 24px rgba(106,168,255,0.22);
+    --scheme: dark;
+  }
+
   * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html { color-scheme: var(--scheme); }
+
+  /* Smoothly transition surface/text colors on theme flip (respect reduced-motion). */
+  body, .site-header, .scenario, .concept, .result, .micro-card, .choice,
+  .setup-card, .bc-dot, .btn, .btn-ghost, .formulas-panel, .formulas-toggle,
+  .quarter-objective, .metric-val, .metric-label, .slider-track, .tag {
+    transition: background-color var(--dur-base) var(--ease),
+                color var(--dur-base) var(--ease),
+                border-color var(--dur-base) var(--ease),
+                box-shadow var(--dur-base) var(--ease);
+  }
+  @media (prefers-reduced-motion: reduce) {
+    body, .site-header, .scenario, .concept, .result, .micro-card, .choice,
+    .setup-card, .bc-dot, .btn, .btn-ghost, .formulas-panel, .formulas-toggle,
+    .quarter-objective, .metric-val, .metric-label, .slider-track, .tag {
+      transition: none;
+    }
+  }
+
+  /* Subtle halo glow on focus in dark mode (inherits caramel in light mode). */
+  [data-theme="dark"] .btn:focus-visible,
+  [data-theme="dark"] .bc-dot:focus-visible,
+  [data-theme="dark"] .choice:focus-visible,
+  [data-theme="dark"] .micro-opt:focus-visible,
+  [data-theme="dark"] .formulas-toggle:focus-visible,
+  [data-theme="dark"] .theme-toggle:focus-visible {
+    outline: 2px solid var(--halo);
+    outline-offset: 2px;
+    box-shadow: var(--halo-glow);
+  }
+
+  /* In dark mode, primary button gets a gentle halo on hover for the "brighter navy halo" feel. */
+  [data-theme="dark"] .btn:hover:not(:disabled) {
+    box-shadow: 0 4px 18px rgba(106,168,255,0.28);
+  }
+  [data-theme="dark"] .bc-dot[data-state="active"] {
+    box-shadow: 0 0 0 1px var(--halo), 0 0 16px rgba(106,168,255,0.32);
+  }
 
   html { -webkit-text-size-adjust: 100%; }
 
@@ -314,7 +408,7 @@
   .site-header {
     position: sticky;
     top: 0;
-    background: rgba(245,240,232,0.94);
+    background: var(--header-bg);
     backdrop-filter: saturate(180%) blur(8px);
     -webkit-backdrop-filter: saturate(180%) blur(8px);
     z-index: 10;
@@ -335,6 +429,10 @@
     grid-template-columns: repeat(4, 1fr);
     gap: var(--s-2);
     margin-bottom: var(--s-3);
+  }
+  /* Keep last metric clear of the fixed theme toggle except on screens wide enough for the toggle to sit in the margin outside the 900px app column. */
+  @media (max-width: 960px) {
+    .metric-strip { padding-right: 48px; }
   }
   .metric {
     min-width: 0;
@@ -489,6 +587,141 @@
     font-size: var(--fs-sm);
     color: var(--text-muted);
     line-height: 1.55;
+  }
+
+  /* Per-quarter learning objective banner */
+  .quarter-objective {
+    border-left: 3px solid var(--caramel);
+    padding: var(--s-3) var(--s-4);
+    margin-bottom: var(--s-5);
+    background: var(--foam);
+    border-radius: 0 var(--r-md) var(--r-md) 0;
+  }
+  .quarter-objective-label {
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+    color: var(--caramel);
+    font-weight: 600;
+    margin-bottom: 4px;
+  }
+  .quarter-objective-body {
+    font-size: var(--fs-sm);
+    color: var(--text);
+    line-height: 1.55;
+  }
+
+  /* Theme toggle — fixed top-right, always visible */
+  .theme-toggle {
+    position: fixed;
+    top: max(var(--s-3), env(safe-area-inset-top));
+    right: max(var(--s-3), env(safe-area-inset-right));
+    z-index: 60;
+    width: 40px;
+    height: 40px;
+    border-radius: 999px;
+    border: 1px solid var(--border-strong);
+    background: var(--foam);
+    color: var(--espresso);
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    box-shadow: var(--shadow-sm);
+    touch-action: manipulation;
+  }
+  .theme-toggle:hover {
+    background: var(--caramel-tint);
+    color: var(--espresso);
+    transform: translateY(-1px);
+  }
+  [data-theme="dark"] .theme-toggle {
+    border-color: var(--border-strong);
+  }
+  [data-theme="dark"] .theme-toggle:hover {
+    background: var(--caramel-tint);
+    box-shadow: 0 4px 16px rgba(106,168,255,0.25);
+  }
+  .theme-toggle svg {
+    width: 18px;
+    height: 18px;
+    stroke: currentColor;
+    stroke-width: 2;
+    fill: none;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+  /* Show the right icon for the current mode */
+  .theme-toggle .icon-sun { display: none; }
+  .theme-toggle .icon-moon { display: block; }
+  [data-theme="dark"] .theme-toggle .icon-sun { display: block; }
+  [data-theme="dark"] .theme-toggle .icon-moon { display: none; }
+
+  /* Sticky formulas drawer */
+  .formulas-toggle {
+    position: fixed;
+    right: max(var(--s-3), env(safe-area-inset-right));
+    bottom: max(var(--s-4), env(safe-area-inset-bottom));
+    z-index: 50;
+    min-height: 44px;
+    padding: 10px 18px;
+    border-radius: 999px;
+    border: 1px solid var(--espresso);
+    background: var(--espresso);
+    color: var(--foam);
+    font: inherit;
+    font-size: var(--fs-sm);
+    font-weight: 500;
+    cursor: pointer;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.18);
+    touch-action: manipulation;
+  }
+  .formulas-toggle:hover, .formulas-toggle:focus-visible {
+    background: var(--roast);
+    outline: 2px solid var(--caramel);
+    outline-offset: 2px;
+  }
+  .formulas-panel {
+    position: fixed;
+    right: max(var(--s-3), env(safe-area-inset-right));
+    bottom: calc(max(var(--s-4), env(safe-area-inset-bottom)) + 56px);
+    z-index: 51;
+    width: min(360px, calc(100vw - var(--s-5)));
+    max-height: 70vh;
+    overflow-y: auto;
+    background: var(--foam);
+    border: 1px solid var(--border-strong);
+    border-radius: var(--r-lg);
+    padding: var(--s-5);
+    box-shadow: 0 12px 32px rgba(0,0,0,0.22);
+  }
+  .formulas-panel h3 {
+    font-family: 'Instrument Serif', Georgia, serif;
+    font-size: 22px;
+    color: var(--espresso);
+    margin-bottom: var(--s-3);
+  }
+  .formulas-panel dl { margin: 0; }
+  .formulas-panel dt {
+    font-weight: 600;
+    color: var(--espresso);
+    font-size: var(--fs-sm);
+    margin-top: var(--s-3);
+  }
+  .formulas-panel dt:first-child { margin-top: 0; }
+  .formulas-panel dd {
+    margin: 4px 0 0;
+    font-size: var(--fs-sm);
+    color: var(--text);
+    line-height: 1.5;
+  }
+  .formulas-panel code {
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 0.92em;
+    background: var(--caramel-tint);
+    padding: 1px 5px;
+    border-radius: 4px;
   }
 
   /* Section heading inside a quarter */
@@ -1057,6 +1290,57 @@
     text-underline-offset: 2px;
   }
   .site-footer a:hover { text-decoration-color: var(--caramel); }
+  .site-footer .sources {
+    margin-top: var(--s-4);
+    padding-top: var(--s-4);
+    border-top: 1px dashed var(--border);
+    text-align: left;
+    max-width: 720px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+  .site-footer .sources h2 {
+    font-family: 'DM Sans', sans-serif;
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+    color: var(--espresso);
+    margin-bottom: var(--s-2);
+    text-align: center;
+  }
+  .site-footer .sources ol {
+    padding-left: var(--s-5);
+    margin: 0;
+  }
+  .site-footer .sources li {
+    margin-top: var(--s-1);
+    font-size: var(--fs-xs);
+    line-height: 1.55;
+  }
+  .fn-ref {
+    font-size: 0.75em;
+    vertical-align: super;
+    line-height: 0;
+    margin-left: 1px;
+    text-decoration: none;
+    color: var(--caramel);
+    font-weight: 600;
+  }
+  .fn-ref:hover, .fn-ref:focus-visible { text-decoration: underline; }
+  .fn-back {
+    font-size: 0.9em;
+    text-decoration: none;
+    margin-left: 4px;
+    color: var(--caramel);
+  }
+  .fn-back:hover { text-decoration: underline; }
+  /* Highlight target footnote briefly for orientation */
+  .site-footer .sources li:target {
+    background: var(--caramel-tint);
+    border-radius: var(--r-sm);
+    padding: 2px 6px;
+    margin-left: -6px;
+  }
 
   /* ============ RESPONSIVE ============ */
 
@@ -1070,7 +1354,8 @@
 
   @media (max-width: 480px) {
     #app { padding: max(var(--s-4), env(safe-area-inset-top)) max(var(--s-3), env(safe-area-inset-right)) max(var(--s-6), env(safe-area-inset-bottom)) max(var(--s-3), env(safe-area-inset-left)); }
-    .metric-strip { grid-template-columns: repeat(2, 1fr); gap: var(--s-3); }
+    /* Reserve room at top-right so the fixed theme toggle doesn't overlap the metric strip. */
+    .metric-strip { grid-template-columns: repeat(2, 1fr); gap: var(--s-3); padding-right: 48px; }
     .metric-val { font-size: 20px; }
     .slider-head { align-items: flex-start; }
     .slider-value-wrap { align-self: flex-end; }
@@ -1118,10 +1403,59 @@
     <p>Typefaces: <a href="https://fonts.google.com/specimen/DM+Sans" rel="noopener">DM Sans</a> and <a href="https://fonts.google.com/specimen/Instrument+Serif" rel="noopener">Instrument Serif</a> via Google Fonts, licensed under the SIL Open Font License.</p>
     <p>Favicon: coffee icon from <a href="https://tabler.io/icons" rel="noopener">Tabler Icons</a> by Paweł Kuna, licensed under the <a href="https://opensource.org/licenses/MIT" rel="noopener">MIT License</a>.</p>
     <p>Texture overlay is an inline SVG noise filter — no third-party assets.</p>
+
+    <section class="sources" aria-label="Sources and citations">
+      <h2>Sources &amp; citations</h2>
+      <ol>
+        <li id="fn1">
+          Gong, <em>Revenue Intelligence Benchmark Report</em>, 2024 — finds 81% of companies missed their sales forecast in at least one quarter between 2021 and 2023.
+          <a href="https://www.gong.io/press/gong-report-finds-more-than-80-percent-of-companies-have-missed-revenue-forecasts-over-the-last-two-years" rel="noopener" target="_blank">gong.io</a>
+          <a href="#fnref1" class="fn-back" aria-label="Back to citation 1">↩</a>
+        </li>
+        <li id="fn2">
+          Specialty-coffee COGS typically runs 30–40% of revenue. Fresh Cup, <em>The Coffee Shop Guide to Metrics and KPIs</em>;
+          <a href="https://freshcup.com/understanding-key-coffee-shop-metrics/" rel="noopener" target="_blank">freshcup.com</a>.
+          Toast, <em>How Much Do Coffee Shops Make? (2026)</em>;
+          <a href="https://pos.toasttab.com/blog/on-the-line/how-much-do-coffee-shops-make" rel="noopener" target="_blank">toasttab.com</a>.
+          <a href="#fnref2" class="fn-back" aria-label="Back to citation 2">↩</a>
+        </li>
+        <li id="fn3">
+          Financial Accounting Standards Board, <em>ASC 606 — Revenue from Contracts with Customers</em> (ASU 2014-09). Revenue is recognized when control of the good or service transfers to the customer, independent of cash collection timing.
+          <a href="https://asc.fasb.org/1943274/2147481197" rel="noopener" target="_blank">asc.fasb.org</a>
+          <a href="#fnref3" class="fn-back" aria-label="Back to citation 3">↩</a>
+        </li>
+      </ol>
+    </section>
   </footer>
 </div>
 
+<button type="button" id="theme-toggle" class="theme-toggle" aria-label="Switch to dark mode" title="Toggle theme">
+  <svg class="icon-moon" viewBox="0 0 24 24" aria-hidden="true"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+  <svg class="icon-sun" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/></svg>
+</button>
+
 <div id="live-region" class="sr-only" aria-live="polite" aria-atomic="true"></div>
+
+<button type="button" id="formulas-toggle" class="formulas-toggle" aria-expanded="false" aria-controls="formulas-panel" hidden>
+  Formulas
+</button>
+<aside id="formulas-panel" class="formulas-panel" role="region" aria-label="Quick-reference formulas" hidden>
+  <h3 id="formulas-heading" tabindex="-1">Quick-reference formulas</h3>
+  <dl>
+    <dt>Revenue variance</dt>
+    <dd><code>Actual Revenue − Budgeted Revenue</code><br>Positive = Favorable (F). Negative = Unfavorable (U).</dd>
+    <dt>Cost variance (VC or FC)</dt>
+    <dd><code>Actual Cost − Budgeted Cost</code><br>Negative = Favorable (F, spent less). Positive = Unfavorable (U, spent more).</dd>
+    <dt>Net impact on operating income</dt>
+    <dd><code>ΔOI = ΔRevenue − ΔVC − ΔFC</code><br>The minus signs on costs are what flips a favorable cost variance into a <em>positive</em> OI impact.</dd>
+    <dt>Contribution margin</dt>
+    <dd><code>Revenue − Variable Costs</code> (pre-fixed-cost profit).</dd>
+    <dt>Cash from operations (indirect)</dt>
+    <dd><code>OI + Depreciation − ΔA/R − ΔInventory − ΔPrepaids + ΔA/P</code></dd>
+    <dt>F/U cheat</dt>
+    <dd>Favorable always means <em>helps OI</em>. Unfavorable always means <em>hurts OI</em>. The sign of the raw variance flips between revenue and costs — the label does not.</dd>
+  </dl>
+</aside>
 
 <script>
 /* ============================================================================
@@ -1147,6 +1481,19 @@ const fu = (n, kind) => {
   if (kind === 'rev') return n >= 0 ? 'F' : 'U';
   return n >= 0 ? 'U' : 'F';
 };
+const q2Snapshot = (s) => {
+  const Q2_REVENUE_REALIZATION = 0.855; // ~14.5% revenue miss versus budget
+  const Q2_VC_BUDGET_RATIO = 0.4; // budget assumes VC at 40% of revenue
+  const Q2_VC_REALIZATION = 0.925; // actual VC comes in slightly favorable vs VC budget
+  const revTarget = s.decisions[0]?.rev_target || 480000;
+  const fcBudget = s.decisions[0]?.fc_budget || 290000;
+  const q2Bud = Math.round(revTarget / 4);
+  const q2Actual = Math.round(q2Bud * Q2_REVENUE_REALIZATION / 1000) * 1000; // apply revenue realization factor, then round to nearest $1,000
+  const q2VcBud = Math.round(q2Bud * Q2_VC_BUDGET_RATIO);
+  const q2VcAct = Math.round(q2VcBud * Q2_VC_REALIZATION / 1000) * 1000;
+  const q2FcBud = Math.round(fcBudget / 4);
+  return { q2Bud, q2Actual, q2VcBud, q2VcAct, q2FcBud };
+};
 
 // ---------------------------------------------------------------------------
 // QUARTER CONFIG
@@ -1164,7 +1511,8 @@ const QUARTERS = [
     concept: {
       title: 'Concept — Budgeting is a forecast <em>and</em> a commitment',
       body: 'A budget isn\'t a wish. It\'s what you\'ll be <em>measured against</em> every quarter. Overstate revenue and everything downstream looks bad; overstate costs and you\'ve padded away your own margin target.',
-      note: 'Industry research consistently shows roughly two-thirds of corporate budgets miss their revenue targets. Optimism bias is the default failure mode.',
+      note: 'Industry research consistently shows most companies miss their revenue forecasts — Gong\'s 2024 report found 81% of companies missed their sales forecast in at least one quarter over a two-year window.<a href="#fn1" id="fnref1" class="fn-ref" aria-label="See footnote 1">[1]</a> Optimism bias is the default failure mode.',
+      objective: 'By the end of Q1 you should be able to: (1) distinguish variable from fixed costs at a line-item level, (2) build a defensible one-year revenue and cost budget anchored to prior-year actuals, and (3) recognize optimism bias in growth assumptions.',
     },
     micro: [
       {
@@ -1190,8 +1538,8 @@ const QUARTERS = [
       kind: 'sliders',
       inputs: [
         { id: 'rev_target', label: 'Annual revenue target', desc: 'Last year: $480,000. Room to plan an expansion if you want.', min: 400000, max: 1200000, step: 5000, default: 552000, unit: '' },
-        { id: 'vc_ratio', label: 'Variable cost ratio', desc: 'Variable costs as % of revenue. Industry benchmark: 38–42%.', min: 30, max: 55, step: 1, default: 40, unit: '%', isPercent: true },
-        { id: 'fc_budget', label: 'Fixed cost budget', desc: 'Lease, salaries, insurance, utilities for the full year. Increase to fund new hires.', min: 180000, max: 500000, step: 5000, default: 240000, unit: '' },
+        { id: 'vc_ratio', label: 'Variable cost ratio', desc: 'Variable costs as % of revenue (beans, milk, cups, card fees). Specialty-coffee COGS typically runs 30–40% per industry surveys;<a href="#fn2" id="fnref2" class="fn-ref" aria-label="See footnote 2">[2]</a> add ~2–3% for card-processing fees.', min: 30, max: 55, step: 1, default: 40, unit: '%', isPercent: true },
+        { id: 'fc_budget', label: 'Fixed cost budget', desc: 'Lease, salaries, insurance, utilities for the full year. Last year ran ~$290K (break-even on $480K rev); increase to fund new hires.', min: 180000, max: 500000, step: 5000, default: 290000, unit: '' },
       ],
       evaluate(vals) {
         const { rev_target, vc_ratio, fc_budget } = vals;
@@ -1234,29 +1582,27 @@ const QUARTERS = [
     n: 2,
     subtitle: 'Variance analysis — who owns the miss?',
     scenario: (s) => {
-      const target = s.decisions[0]?.rev_target || 480000;
-      const q2Bud = Math.round(target / 4);
+      const { q2Bud, q2Actual, q2VcBud, q2VcAct } = q2Snapshot(s);
       return `
         <p>It\'s early April. Q2 just closed. Your annual plan prorated to a <strong>${fmt(q2Bud)}</strong> quarterly revenue budget. A new competitor opened two blocks down in February, and your Q2 actuals came in:</p>
-        <p><strong>Revenue: $118,000.</strong> Variable costs ran <strong>$51,000</strong> against a budget of <strong>${fmt(Math.round(q2Bud * 0.4))}</strong>. Fixed costs landed roughly on plan.</p>
+        <p><strong>Revenue: ${fmt(q2Actual)}.</strong> Variable costs ran <strong>${fmt(q2VcAct)}</strong> against a budget of <strong>${fmt(q2VcBud)}</strong>. Fixed costs landed roughly on plan.</p>
         <p>Before strategy, ownership wants a clean <em>variance analysis</em>: which buckets are favorable, which are unfavorable, and what it means for operating income.</p>
       `;
     },
     concept: {
       title: 'Concept — <em>Favorable</em> and <em>Unfavorable</em> flip signs between revenue and costs',
-      body: 'For <em>revenue</em>, Actual < Budget is <em>unfavorable</em>. For <em>costs</em>, Actual < Budget is <em>favorable</em> (you spent less than you planned).',
+      body: 'For <em>revenue</em>, Actual < Budget is <em>unfavorable</em>. For <em>costs</em>, Actual < Budget is <em>favorable</em> (you spent less than you planned). The master formula: <strong>ΔOI = ΔRevenue − ΔVC − ΔFC</strong>. The minus signs on costs are where the sign convention comes from.',
       note: 'Net effect on operating income = Revenue variance − Cost variance. Dropping the second minus sign is how students lose the easy points on a variance exam.',
+      objective: 'By the end of Q2 you should be able to: (1) compute revenue, variable cost, and fixed cost variances, (2) apply the F/U sign convention correctly, and (3) calculate the net impact on operating income using ΔOI = ΔRev − ΔCost.',
     },
     micro: (s) => {
-      const target = s.decisions[0]?.rev_target || 480000;
-      const q2Bud = Math.round(target / 4);
-      const vcBud = Math.round(q2Bud * 0.4);
-      const revVar = 118000 - q2Bud;
-      const vcVar = 51000 - vcBud;
+      const { q2Bud, q2Actual, q2VcBud: vcBud, q2VcAct: vcAct } = q2Snapshot(s);
+      const revVar = q2Actual - q2Bud;
+      const vcVar = vcAct - vcBud;
       const oiImpact = revVar - vcVar;
       return [
         {
-          prompt: `Revenue came in at $118,000 against your budget of ${fmt(q2Bud)}. The <strong>revenue variance</strong> is…`,
+          prompt: `Revenue came in at ${fmt(q2Actual)} against your budget of ${fmt(q2Bud)}. The <strong>revenue variance</strong> is…`,
           opts: [
             { id: 'a', text: 'Favorable — actual is lower than budget', correct: false, explain: 'Lower revenue than budgeted is <em>unfavorable</em>. On revenue, actual-below-budget hurts you.' },
             { id: 'b', text: 'Unfavorable — actual is below budget', correct: revVar < 0, explain: revVar < 0 ? 'Correct. Actual revenue below budget is always unfavorable (U).' : 'On these numbers, actual revenue actually came in above budget — so the variance is favorable.' },
@@ -1265,7 +1611,7 @@ const QUARTERS = [
           ],
         },
         {
-          prompt: `Variable costs came in at $51,000 vs. a budget of ${fmt(vcBud)}. The <strong>variable cost variance</strong> is…`,
+          prompt: `Variable costs came in at ${fmt(vcAct)} vs. a budget of ${fmt(vcBud)}. The <strong>variable cost variance</strong> is…`,
           opts: [
             { id: 'a', text: 'Favorable — you spent less than planned', correct: vcVar < 0, explain: vcVar < 0 ? 'Correct. On costs, spending less than budgeted is favorable (F).' : 'Here you actually spent more than budgeted, so this is unfavorable.' },
             { id: 'b', text: 'Unfavorable — you spent less than planned', correct: false, explain: 'Sign convention flips on costs. Less spending than budgeted is <em>favorable</em>.' },
@@ -1276,9 +1622,9 @@ const QUARTERS = [
         {
           prompt: 'What\'s the <strong>net effect on operating income</strong> from those two variances?',
           opts: [
-            { id: 'a', text: `${fmtSigned(revVar + vcVar)} — just add the two raw variances`, correct: false, explain: 'This is the classic trap. Adding raw variances double-counts the favorable cost variance in the wrong direction.' },
-            { id: 'b', text: `${fmtSigned(oiImpact)} — revenue variance minus cost variance`, correct: true, explain: 'Correct. OI impact = Rev variance − Cost variance. A favorable cost variance <em>helps</em> OI, so it must be subtracted (a negative cost var means a positive impact on OI).' },
-            { id: 'c', text: `${fmt(-51000 + 118000)} — just contribution after variable costs`, correct: false, explain: 'That\'s gross contribution, not a variance. You\'re mixing levels.' },
+            { id: 'a', text: `${fmtSigned(revVar + vcVar)} — just add the two raw variances`, correct: false, explain: 'Classic trap. A <em>favorable</em> cost variance (actual &lt; budget) is already a negative number; adding it to the revenue variance <em>subtracts</em> from OI when it should <em>add</em> to it. Use ΔOI = ΔRev − ΔCost so the cost sign flips back the right way.' },
+            { id: 'b', text: `${fmtSigned(oiImpact)} — revenue variance minus cost variance`, correct: true, explain: 'Correct. ΔOI = ΔRev − ΔCost. A favorable cost variance is a negative cost-var number; subtracting it turns into a <em>positive</em> impact on OI — exactly what "favorable" means.' },
+            { id: 'c', text: `${fmt(q2Actual - vcAct)} — just contribution after variable costs`, correct: false, explain: 'That\'s gross contribution margin, not a variance. You\'re mixing levels — variance analysis compares to <em>budget</em>, not to zero.' },
             { id: 'd', text: 'Zero — the variances cancel', correct: false, explain: 'They don\'t cancel on these numbers. Run the math explicitly.' },
           ],
         },
@@ -1326,11 +1672,9 @@ const QUARTERS = [
         },
       ],
       evaluate(choice, s) {
-        const target = s.decisions[0]?.rev_target || 480000;
-        const q2Bud = Math.round(target / 4);
-        const vcBud = Math.round(q2Bud * 0.4);
-        const revVar = 118000 - q2Bud;
-        const vcVar = 51000 - vcBud;
+        const { q2Bud, q2Actual, q2VcBud: vcBud, q2VcAct: vcAct } = q2Snapshot(s);
+        const revVar = q2Actual - q2Bud;
+        const vcVar = vcAct - vcBud;
         const oiImpact = revVar - vcVar;
         return {
           points: choice.points,
@@ -1353,15 +1697,16 @@ const QUARTERS = [
     n: 3,
     subtitle: 'Profit ≠ Cash',
     scenario: `
-      <p>Q3 is here and the books look healthy: <strong>$132,000 in revenue, $18,000 operating income</strong>. On paper, a good quarter.</p>
+      <p>Q3 is here and the books look healthy: <strong>$132,000 in revenue, $18,000 operating income</strong>. On paper, a good quarter. (The $25K wholesale order below is <em>already included</em> in that revenue figure — recognized at delivery, per ASC 606.<a href="#fn3" id="fnref3" class="fn-ref" aria-label="See footnote 3">[3]</a>)</p>
       <p>But two things also happened on the cash side:</p>
       <p>A downtown hotel placed its first <strong>$25,000 wholesale order</strong> on Net-30 terms — revenue recognized, cash not collected. And to lock in next quarter\'s holiday rush, you <strong>prepaid $30,000</strong> for specialty beans to be delivered in Q4.</p>
       <p>Both were good business decisions. Neither is an expense this quarter. But both drain cash.</p>
     `,
     concept: {
       title: 'Concept — On accrual books, profit is not cash',
-      body: 'Revenue hits the income statement when <em>earned</em>, not when <em>collected</em>. Expenses hit when <em>incurred</em>, not when <em>paid</em>. Cash flow fills the gap — and the gap can be huge in a growing or inventory-heavy business.',
+      body: 'Revenue hits the income statement when <em>earned</em>, not when <em>collected</em> (ASC 606). Expenses hit when <em>incurred</em>, not when <em>paid</em>. Cash flow fills the gap — and the gap can be huge in a growing or inventory-heavy business.',
       note: 'Indirect method: start from operating income, subtract increases in receivables and prepaid assets (cash tied up), add back depreciation (no cash out).',
+      objective: 'By the end of Q3 you should be able to: (1) distinguish revenue recognition (accrual) from cash collection, (2) reconcile operating income to cash from operations using the indirect method, and (3) identify working-capital levers that drain cash even in a profitable quarter.',
     },
     micro: [
       {
@@ -1376,7 +1721,7 @@ const QUARTERS = [
       {
         prompt: 'The $25,000 wholesale receivable — is it a <strong>cash inflow</strong> this quarter?',
         opts: [
-          { id: 'a', text: 'Yes — the sale closed, so cash arrives with it', correct: false, explain: 'That\'s cash-basis thinking. On accrual books, <em>revenue</em> is recognized at delivery; cash arrives on Net-30.' },
+          { id: 'a', text: 'Yes — the sale closed, so cash arrives with it', correct: false, explain: 'That conflates cash basis with accrual. Under <strong>ASC 606 / accrual accounting</strong>, revenue recognition (at delivery) and cash collection (on Net-30 terms) are independent events.' },
           { id: 'b', text: 'No — revenue is recognized, but cash is collected next quarter', correct: true, explain: 'Correct. The receivable <em>grows</em>. Income went up by $25K, cash did not.' },
           { id: 'c', text: 'Only half counts — the rest is unearned', correct: false, explain: 'The whole order was delivered, so the whole $25K is earned. The split is between revenue (recognized) and cash (not yet received), not between earned and unearned.' },
           { id: 'd', text: 'Yes, if they paid a deposit', correct: false, explain: 'On Net-30 terms, typically no deposit — but even if there were, only the deposit would be cash this quarter.' },
@@ -1431,12 +1776,12 @@ const QUARTERS = [
           title: choice.resultTitle,
           body: choice.body,
           breakdown: [
-            { label: 'Q3 operating income', val: 18000, cls: 'pos' },
-            { label: 'Less: increase in A/R (wholesale sale, cash not collected)', val: -25000, cls: 'neg' },
-            { label: 'Less: prepaid inventory (cash paid, expense deferred)', val: -30000, cls: 'neg' },
+            { label: 'Q3 operating income (includes the $25K wholesale sale, per ASC 606)', val: 18000, cls: 'pos' },
+            { label: 'Less: increase in A/R (the $25K sale is in OI above, but no cash was collected)', val: -25000, cls: 'neg' },
+            { label: 'Less: prepaid inventory (cash paid, expense deferred to Q4 COGS)', val: -30000, cls: 'neg' },
             { label: 'Cash from operations this quarter', val: -37000, cls: 'neg', total: true },
           ],
-          why: 'Accrual profit answers "how much value did I create?" Cash flow answers "will I make payroll on Friday?" You need both — and the gap is where growing businesses get squeezed.',
+          why: 'Not double-counting: the $25K sale is <em>already inside</em> the $18K of operating income (accrual recognizes it at delivery). We subtract the A/R increase because <em>none of it was collected in cash</em>. Accrual profit answers "how much value did I create?" Cash flow answers "will I make payroll on Friday?" You need both — and the gap is where growing businesses get squeezed.',
         };
       },
     },
@@ -1462,6 +1807,7 @@ const QUARTERS = [
       title: 'Concept — The anchor matters more than the forecast',
       body: 'Next year\'s budget inherits every bias in this year\'s. Start from a <em>stale</em> anchor — the board\'s growth target, last year\'s plan — and you\'ll repeat the same variances. Start from <em>this year\'s actuals</em> and at least you\'re forecasting from reality.',
       note: 'The best budget isn\'t the most optimistic or the most conservative — it\'s the most <em>defensible</em>. "Here\'s what actually happened; here\'s what we\'re changing" beats every other framing.',
+      objective: 'By the end of Q4 you should be able to: (1) compute and interpret year-end variances, (2) distinguish a mechanically-favorable variance from a strategically-good outcome, and (3) anchor a forward budget to actuals with explicit adjustments for known changes.',
     },
     micro: (s) => {
       const budRev = s.decisions[0]?.rev_target || 550000;
@@ -1481,7 +1827,7 @@ const QUARTERS = [
         {
           prompt: 'Fixed costs came in <strong>$12,000 under budget</strong> because you never made a planned hire. That variance is…',
           opts: [
-            { id: 'a', text: 'Favorable — you spent less than planned', correct: true, explain: 'Correct. On costs, actual below budget is favorable. But watch out: not hiring may have <em>caused</em> the revenue shortfall — the F variance can hide a real problem.' },
+            { id: 'a', text: 'Favorable — you spent less than planned', correct: true, explain: 'Correct. On costs, actual below budget is favorable (F). Variance labels measure dollars vs. plan — the strategic question (did skipping the hire cost you revenue?) is separate, and we\'ll come back to it in the decision below.' },
             { id: 'b', text: 'Unfavorable — you spent less than planned', correct: false, explain: 'Cost sign convention: actual-below-budget is <em>favorable</em>. Keep them straight.' },
             { id: 'c', text: 'Neutral — you just deferred the hire', correct: false, explain: 'Variance analysis compares <em>this period\'s</em> actual to <em>this period\'s</em> budget. What you might do next period doesn\'t change this period\'s variance.' },
             { id: 'd', text: 'Unfavorable — under-hiring is always bad', correct: false, explain: 'Favorability is about dollars spent vs. plan, not about whether the decision was strategically wise.' },
@@ -1509,7 +1855,7 @@ const QUARTERS = [
           points: 20,
           tone: 'tag-success',
           resultTitle: 'The defensible default',
-          body: 'Starting from actuals grounds every line in something you can point to. When ownership asks "why this number?" you have a direct answer. This is how mature FP&A teams build.',
+          body: 'Starting from actuals grounds every line in something you can point to. When ownership asks "why this number?" you have a direct answer. This is how mature FP&A teams build. Note too that your "favorable" $12K fixed-cost variance this year may have <em>caused</em> the revenue shortfall — skipping the barista hire is exactly the kind of decision an actuals-based rebuild forces you to revisit.',
         },
         {
           id: 'growth',
@@ -1650,10 +1996,10 @@ function renderStart() {
 
   const obj = el('div', { className: 'learning-obj' });
   [
-    ['Q1 — Budgeting', 'Set a defensible annual plan. Navigate optimism bias.'],
-    ['Q2 — Variances', 'Identify what\'s favorable, what\'s unfavorable, and own the OI impact.'],
-    ['Q3 — Cash flow', 'See why profit ≠ cash when receivables and prepaid inventory grow.'],
-    ['Q4 — Rebuilding', 'Anchor next year\'s plan to actuals, not to wishes.'],
+    ['Q1 — Budgeting', 'Distinguish variable vs. fixed costs, build a defensible one-year plan anchored to prior-year actuals, and recognize optimism bias in growth assumptions.'],
+    ['Q2 — Variances', 'Compute revenue and cost variances, apply the F/U sign convention correctly, and calculate the net impact on operating income using ΔOI = ΔRev − ΔCost.'],
+    ['Q3 — Cash flow', 'Separate accrual revenue recognition (ASC 606) from cash collection, and reconcile operating income to cash from operations using the indirect method.'],
+    ['Q4 — Rebuilding', 'Interpret year-end variances, distinguish mechanically-favorable variances from strategically-good outcomes, and anchor next year\'s plan to actuals with explicit adjustments.'],
   ].forEach(([t, d]) => {
     const i = el('div', { className: 'learning-obj-item' });
     i.appendChild(el('strong', {}, t));
@@ -1760,6 +2106,14 @@ function renderQuarter() {
       onclick: () => { state.viewingQuarter = state.activeQuarter; state.exploring = null; render(); }
     }, 'Return to current →'));
     screen.appendChild(banner);
+  }
+
+  // Learning objective banner (per-quarter)
+  if (q.concept && q.concept.objective) {
+    const obj = el('aside', { className: 'quarter-objective', 'aria-label': 'Learning objective' });
+    obj.appendChild(el('div', { className: 'quarter-objective-label' }, 'Learning objective'));
+    obj.appendChild(el('div', { className: 'quarter-objective-body', html: q.concept.objective }));
+    screen.appendChild(obj);
   }
 
   // Scenario
@@ -2198,7 +2552,10 @@ function submitQuarter(qIdx) {
 
   // Update cash per quarter (narrative approx)
   if (qIdx === 0) state.cash += 0;
-  else if (qIdx === 1) state.cash += Math.round((118000 - 51000 - 30000)); // rough Q2 cash
+  else if (qIdx === 1) {
+    const { q2Actual, q2VcAct, q2FcBud } = q2Snapshot(state);
+    state.cash += Math.round(q2Actual - q2VcAct - q2FcBud); // rough Q2 cash
+  }
   else if (qIdx === 2) state.cash += -37000;
   else state.cash += 40000;
 
@@ -2295,10 +2652,100 @@ function renderFinal() {
 // ---------------------------------------------------------------------------
 
 function render() {
+  updateFormulasVisibility();
   if (!state.started) return renderStart();
   if (state.finished) return renderFinal();
   return renderQuarter();
 }
+
+/* ============ THEME TOGGLE ============ */
+(function initThemeToggle() {
+  const toggle = document.getElementById('theme-toggle');
+  if (!toggle) return;
+
+  function currentTheme() {
+    return document.documentElement.getAttribute('data-theme') === 'dark' ? 'dark' : 'light';
+  }
+  function updateLabel() {
+    const next = currentTheme() === 'dark' ? 'light' : 'dark';
+    toggle.setAttribute('aria-label', 'Switch to ' + next + ' mode');
+  }
+  function applyTheme(theme, persist) {
+    const normalizedTheme = theme === 'dark' ? 'dark' : 'light';
+    document.documentElement.setAttribute('data-theme', normalizedTheme);
+    const meta = document.getElementById('meta-theme-color');
+    if (meta) meta.setAttribute('content', normalizedTheme === 'dark' ? '#0B1220' : '#F5F0E8');
+    if (persist) {
+      try { localStorage.setItem('bb-theme', normalizedTheme); } catch (_) {}
+    }
+    updateLabel();
+    const live = document.getElementById('live-region');
+    if (live) live.textContent = normalizedTheme === 'dark' ? 'Dark mode on.' : 'Light mode on.';
+  }
+
+  updateLabel();
+
+  toggle.addEventListener('click', () => {
+    applyTheme(currentTheme() === 'dark' ? 'light' : 'dark', true);
+  });
+
+  // Follow system changes only when the user hasn't manually overridden.
+  if (window.matchMedia) {
+    const mq = window.matchMedia('(prefers-color-scheme: dark)');
+    const listener = (e) => {
+      try {
+        if (localStorage.getItem('bb-theme')) return; // user override wins
+      } catch (_) {}
+      applyTheme(e.matches ? 'dark' : 'light', false);
+    };
+    if (mq.addEventListener) mq.addEventListener('change', listener);
+    else if (mq.addListener) mq.addListener(listener);
+  }
+})();
+
+function updateFormulasVisibility() {
+  const toggle = document.getElementById('formulas-toggle');
+  const panel = document.getElementById('formulas-panel');
+  if (!toggle || !panel) return;
+  const shouldShow = state.started && !state.finished;
+  toggle.hidden = !shouldShow;
+  if (!shouldShow) {
+    panel.hidden = true;
+    toggle.setAttribute('aria-expanded', 'false');
+  }
+}
+
+function setFormulasOpen(open, restoreFocus) {
+  const toggle = document.getElementById('formulas-toggle');
+  const panel = document.getElementById('formulas-panel');
+  if (!toggle || !panel) return;
+  panel.hidden = !open;
+  toggle.setAttribute('aria-expanded', String(open));
+  if (open) {
+    const heading = document.getElementById('formulas-heading');
+    if (heading) heading.focus();
+  } else if (restoreFocus) {
+    toggle.focus();
+  }
+}
+
+document.addEventListener('click', (e) => {
+  const toggle = document.getElementById('formulas-toggle');
+  const panel = document.getElementById('formulas-panel');
+  if (!toggle || !panel) return;
+  if (e.target === toggle || toggle.contains(e.target)) {
+    setFormulasOpen(panel.hidden, false);
+    return;
+  }
+  if (!panel.hidden && !panel.contains(e.target)) {
+    setFormulasOpen(false, false);
+  }
+});
+document.addEventListener('keydown', (e) => {
+  if (e.key !== 'Escape') return;
+  const panel = document.getElementById('formulas-panel');
+  if (panel && !panel.hidden) setFormulasOpen(false, true);
+});
 
 /* Scroll behavior — only scroll on screen transitions or explicit submit.
    In-place interactions (selecting a micro option, toggling a choice, what-if
