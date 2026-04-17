@@ -1,0 +1,2323 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="description" content="Budget Boss — an interactive budgeting and forecasting game for MBA core accounting students. Run Crestline Coffee Co. through four quarters of variance analysis.">
+<meta name="theme-color" content="#F5F0E8">
+<title>Budget Boss — Crestline Coffee Co.</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  /* ========================================================================
+     DESIGN TOKENS
+     Color values chosen to meet WCAG 2.1 AA contrast against --foam/--cream.
+     Spacing on a 4px grid. Type scale uses clamp() for fluid mobile sizing.
+     ======================================================================== */
+  :root {
+    /* Palette */
+    --cream: #F5F0E8;
+    --foam: #FAF7F2;
+    --espresso: #1C1410;
+    --roast: #3D2314;
+    --caramel: #B67633;        /* darkened for AA on cream */
+    --caramel-light: #E8C99A;
+    --caramel-tint: #F5E6CF;
+    --text: #1C1410;
+    --text-muted: #6B5A4C;     /* 4.6:1 on foam */
+    --text-faint: #8A7968;
+    --success: #2F5B3E;
+    --success-bg: #E6F0E9;
+    --warn: #6E5212;
+    --warn-bg: #FBEFD2;
+    --danger: #691B1B;
+    --danger-bg: #F7E2E2;
+    --border: rgba(60,35,20,0.14);
+    --border-strong: rgba(60,35,20,0.28);
+    --shadow-sm: 0 1px 2px rgba(28,20,16,0.04);
+    --shadow: 0 2px 14px rgba(28,20,16,0.08);
+    --shadow-lg: 0 8px 32px rgba(28,20,16,0.12);
+
+    /* Spacing (4px grid) */
+    --s-1: 4px;
+    --s-2: 8px;
+    --s-3: 12px;
+    --s-4: 16px;
+    --s-5: 20px;
+    --s-6: 24px;
+    --s-8: 32px;
+    --s-10: 40px;
+    --s-12: 48px;
+
+    /* Radius */
+    --r-sm: 6px;
+    --r-md: 10px;
+    --r-lg: 14px;
+    --r-xl: 20px;
+
+    /* Type scale — fluid */
+    --fs-xs: 12px;
+    --fs-sm: 13px;
+    --fs-base: 15px;
+    --fs-md: clamp(16px, 1.8vw, 17px);
+    --fs-lg: clamp(18px, 2.2vw, 20px);
+    --fs-xl: clamp(22px, 3vw, 26px);
+    --fs-2xl: clamp(28px, 4.5vw, 38px);
+    --fs-3xl: clamp(36px, 7vw, 56px);
+    --fs-4xl: clamp(44px, 9vw, 76px);
+
+    /* Motion */
+    --ease: cubic-bezier(.2,.7,.3,1);
+    --dur-fast: 140ms;
+    --dur-base: 240ms;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html { -webkit-text-size-adjust: 100%; }
+
+  body {
+    background: var(--cream);
+    color: var(--text);
+    font-family: 'DM Sans', system-ui, -apple-system, sans-serif;
+    font-weight: 400;
+    font-size: var(--fs-base);
+    line-height: 1.6;
+    min-height: 100vh;
+    min-height: 100svh;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+
+  /* Grain overlay */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
+    pointer-events: none;
+    z-index: 0;
+    opacity: 0.55;
+  }
+
+  /* Skip link for keyboard users */
+  .skip-link {
+    position: absolute;
+    top: -40px;
+    left: var(--s-4);
+    background: var(--espresso);
+    color: var(--foam);
+    padding: var(--s-2) var(--s-4);
+    border-radius: var(--r-sm);
+    z-index: 100;
+    text-decoration: none;
+    font-weight: 500;
+  }
+  .skip-link:focus { top: var(--s-4); }
+
+  :focus-visible {
+    outline: 2px solid var(--caramel);
+    outline-offset: 2px;
+    border-radius: var(--r-sm);
+  }
+
+  #app {
+    position: relative;
+    z-index: 1;
+    max-width: 900px;
+    margin: 0 auto;
+    padding: max(var(--s-6), env(safe-area-inset-top)) max(var(--s-4), env(safe-area-inset-right)) max(var(--s-8), env(safe-area-inset-bottom)) max(var(--s-4), env(safe-area-inset-left));
+  }
+
+  /* ============ SCREENS ============ */
+
+  .screen {
+    animation: fadeUp var(--dur-base) var(--ease);
+    min-width: 0;
+  }
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(6px); }
+    to   { opacity: 1; transform: none; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .screen { animation: none; }
+    * { transition: none !important; animation-duration: 1ms !important; }
+  }
+
+  /* ============ START SCREEN ============ */
+
+  .start-wrap {
+    text-align: center;
+    padding: var(--s-8) var(--s-3);
+  }
+
+  .eyebrow {
+    font-size: var(--fs-xs);
+    text-transform: uppercase;
+    letter-spacing: 0.18em;
+    color: var(--caramel);
+    margin-bottom: var(--s-5);
+    font-weight: 500;
+  }
+
+  h1.title {
+    font-family: 'Instrument Serif', Georgia, serif;
+    font-weight: 400;
+    font-size: var(--fs-4xl);
+    line-height: 0.95;
+    letter-spacing: -0.02em;
+    color: var(--espresso);
+    margin-bottom: var(--s-5);
+  }
+  h1.title em {
+    font-style: italic;
+    color: var(--caramel);
+  }
+
+  .tagline {
+    font-size: var(--fs-lg);
+    color: var(--text-muted);
+    max-width: 560px;
+    margin: 0 auto var(--s-8);
+    line-height: 1.55;
+  }
+
+  .setup-card {
+    background: var(--foam);
+    border-radius: var(--r-xl);
+    border: 1px solid var(--border);
+    padding: var(--s-8) var(--s-6);
+    box-shadow: var(--shadow);
+    margin-bottom: var(--s-8);
+    text-align: left;
+  }
+
+  .setup-card h2 {
+    font-family: 'Instrument Serif', Georgia, serif;
+    font-weight: 400;
+    font-size: var(--fs-2xl);
+    line-height: 1.1;
+    margin-bottom: var(--s-3);
+  }
+  .setup-card h2 em { font-style: italic; color: var(--caramel); }
+
+  .setup-card p { color: var(--text-muted); margin-bottom: var(--s-3); }
+
+  .biz-facts {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: var(--s-3);
+    margin-top: var(--s-5);
+  }
+  .biz-fact {
+    background: var(--cream);
+    border: 1px solid var(--border);
+    border-radius: var(--r-md);
+    padding: var(--s-3) var(--s-4);
+    min-width: 0;
+  }
+  .biz-fact-label {
+    font-size: var(--fs-xs);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--text-muted);
+    margin-bottom: 2px;
+  }
+  .biz-fact-val {
+    font-weight: 500;
+    font-size: var(--fs-md);
+    color: var(--espresso);
+    overflow-wrap: anywhere;
+  }
+
+  .learning-obj {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: var(--s-4);
+    margin-bottom: var(--s-8);
+  }
+  .learning-obj-item {
+    background: var(--foam);
+    border: 1px solid var(--border);
+    border-radius: var(--r-md);
+    padding: var(--s-4) var(--s-5);
+    text-align: left;
+  }
+  .learning-obj-item strong {
+    display: block;
+    font-weight: 500;
+    margin-bottom: var(--s-1);
+    color: var(--espresso);
+  }
+  .learning-obj-item span {
+    color: var(--text-muted);
+    font-size: var(--fs-sm);
+  }
+
+  /* ============ BUTTONS ============ */
+
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--s-2);
+    background: var(--espresso);
+    color: var(--foam);
+    border: 0;
+    border-radius: 999px;
+    padding: var(--s-4) var(--s-8);
+    font-family: inherit;
+    font-size: var(--fs-md);
+    font-weight: 500;
+    min-height: 48px;
+    cursor: pointer;
+    transition: transform var(--dur-fast) var(--ease), background var(--dur-fast) var(--ease), opacity var(--dur-fast);
+    touch-action: manipulation;
+  }
+  .btn:hover:not(:disabled) { background: var(--roast); transform: translateY(-1px); }
+  .btn:active:not(:disabled) { transform: translateY(0); }
+  .btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+  .btn-ghost {
+    background: transparent;
+    color: var(--espresso);
+    border: 1px solid var(--border-strong);
+    padding: var(--s-3) var(--s-5);
+    min-height: 44px;
+  }
+  .btn-ghost:hover:not(:disabled) { background: var(--foam); transform: none; }
+
+  .btn-sm {
+    padding: var(--s-2) var(--s-4);
+    font-size: var(--fs-sm);
+    min-height: 36px;
+  }
+
+  /* ============ SITE HEADER / METRIC STRIP / BREADCRUMB ============ */
+
+  .site-header {
+    position: sticky;
+    top: 0;
+    background: rgba(245,240,232,0.94);
+    backdrop-filter: saturate(180%) blur(8px);
+    -webkit-backdrop-filter: saturate(180%) blur(8px);
+    z-index: 10;
+    padding: var(--s-3) 0 var(--s-2);
+    margin: calc(-1 * max(var(--s-6), env(safe-area-inset-top))) calc(-1 * max(var(--s-4), env(safe-area-inset-right))) var(--s-5) calc(-1 * max(var(--s-4), env(safe-area-inset-left)));
+    padding-left: max(var(--s-4), env(safe-area-inset-left));
+    padding-right: max(var(--s-4), env(safe-area-inset-right));
+    padding-top: max(var(--s-3), env(safe-area-inset-top));
+    border-bottom: 1px solid var(--border);
+  }
+  .site-header-inner {
+    max-width: 900px;
+    margin: 0 auto;
+  }
+
+  .metric-strip {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: var(--s-2);
+    margin-bottom: var(--s-3);
+  }
+  .metric {
+    min-width: 0;
+  }
+  .metric-label {
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--text-muted);
+    margin-bottom: 2px;
+  }
+  .metric-val {
+    font-family: 'Instrument Serif', Georgia, serif;
+    font-size: clamp(18px, 3.5vw, 24px);
+    font-weight: 400;
+    color: var(--espresso);
+    line-height: 1;
+    overflow-wrap: anywhere;
+  }
+  .metric-val.neg { color: var(--danger); }
+  .metric-val.pos { color: var(--success); }
+
+  /* Breadcrumb */
+  .breadcrumb {
+    display: flex;
+    align-items: center;
+    gap: var(--s-2);
+    padding: var(--s-2) 0 var(--s-1);
+    flex-wrap: wrap;
+  }
+  .breadcrumb-label {
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: var(--text-muted);
+    margin-right: var(--s-1);
+  }
+  .bc-dot {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--s-1);
+    min-height: 44px;
+    padding: 8px var(--s-3);
+    border-radius: 999px;
+    border: 1px solid var(--border);
+    background: transparent;
+    font: inherit;
+    font-size: var(--fs-xs);
+    font-weight: 500;
+    color: var(--text-muted);
+    cursor: pointer;
+    touch-action: manipulation;
+    transition: background var(--dur-fast) var(--ease), color var(--dur-fast) var(--ease), border-color var(--dur-fast) var(--ease);
+  }
+  .bc-dot:disabled { cursor: not-allowed; opacity: 0.5; }
+  .bc-dot[data-state="visited"]:not(:disabled):hover { background: var(--foam); color: var(--espresso); }
+  .bc-dot[data-state="visited"] { color: var(--espresso); border-color: var(--border-strong); }
+  .bc-dot[data-state="active"] {
+    background: var(--espresso);
+    color: var(--foam);
+    border-color: var(--espresso);
+  }
+  .bc-dot[data-state="reviewing"] {
+    background: var(--caramel-tint);
+    color: var(--roast);
+    border-color: var(--caramel);
+  }
+  .bc-dot .mini-score {
+    font-size: 10px;
+    opacity: 0.8;
+  }
+
+  /* ============ QUARTER CARD ============ */
+
+  .quarter-header {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: var(--s-4);
+    margin-bottom: var(--s-5);
+    flex-wrap: wrap;
+  }
+  .quarter-label {
+    font-family: 'Instrument Serif', Georgia, serif;
+    font-size: var(--fs-3xl);
+    line-height: 0.95;
+    color: var(--espresso);
+  }
+  .quarter-label em { font-style: italic; color: var(--caramel); }
+  .quarter-sub {
+    font-size: var(--fs-sm);
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+  }
+
+  .review-banner {
+    background: var(--caramel-tint);
+    border: 1px solid var(--caramel);
+    border-radius: var(--r-md);
+    padding: var(--s-3) var(--s-4);
+    margin-bottom: var(--s-5);
+    display: flex;
+    gap: var(--s-4);
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    color: var(--roast);
+    font-size: var(--fs-sm);
+  }
+  .review-banner strong { color: var(--espresso); }
+
+  .scenario {
+    background: var(--foam);
+    border: 1px solid var(--border);
+    border-radius: var(--r-lg);
+    padding: var(--s-5) var(--s-6);
+    margin-bottom: var(--s-5);
+    box-shadow: var(--shadow-sm);
+  }
+  .scenario p + p { margin-top: var(--s-3); }
+  .scenario p { color: var(--text); line-height: 1.65; }
+  .scenario strong { font-weight: 500; color: var(--espresso); }
+
+  .concept {
+    background: linear-gradient(180deg, var(--caramel-tint) 0%, var(--foam) 100%);
+    border: 1px solid var(--caramel);
+    border-radius: var(--r-lg);
+    padding: var(--s-5) var(--s-6);
+    margin-bottom: var(--s-6);
+  }
+  .concept-title {
+    font-size: var(--fs-xs);
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+    color: var(--caramel);
+    font-weight: 500;
+    margin-bottom: var(--s-2);
+  }
+  .concept-body {
+    font-family: 'Instrument Serif', Georgia, serif;
+    font-size: var(--fs-xl);
+    line-height: 1.35;
+    color: var(--espresso);
+    letter-spacing: -0.005em;
+  }
+  .concept-body em { font-style: italic; color: var(--caramel); }
+  .concept-note {
+    margin-top: var(--s-3);
+    font-family: 'DM Sans', sans-serif;
+    font-size: var(--fs-sm);
+    color: var(--text-muted);
+    line-height: 1.55;
+  }
+
+  /* Section heading inside a quarter */
+  .section-h {
+    font-family: 'DM Sans', sans-serif;
+    font-size: var(--fs-xs);
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+    color: var(--text-muted);
+    margin-bottom: var(--s-3);
+    font-weight: 500;
+  }
+
+  /* ============ MICRO QUESTIONS ============ */
+
+  .micro-block {
+    background: var(--foam);
+    border: 1px solid var(--border);
+    border-radius: var(--r-lg);
+    padding: var(--s-5) var(--s-5);
+    margin-bottom: var(--s-5);
+    box-shadow: var(--shadow-sm);
+  }
+  .micro-q { padding: var(--s-3) 0; border-bottom: 1px dashed var(--border); }
+  .micro-q:first-of-type { padding-top: 0; }
+  .micro-q:last-of-type { border-bottom: 0; padding-bottom: 0; }
+  .micro-q-prompt {
+    font-weight: 500;
+    margin-bottom: var(--s-3);
+    color: var(--espresso);
+    line-height: 1.45;
+  }
+  .micro-q-index {
+    display: inline-block;
+    font-size: var(--fs-xs);
+    color: var(--caramel);
+    font-weight: 500;
+    margin-right: var(--s-2);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+  }
+  .micro-opts {
+    display: grid;
+    gap: var(--s-2);
+  }
+  .micro-opt {
+    display: flex;
+    align-items: center;
+    gap: var(--s-3);
+    background: var(--cream);
+    border: 1px solid var(--border);
+    border-radius: var(--r-md);
+    padding: var(--s-3) var(--s-4);
+    min-height: 44px;
+    cursor: pointer;
+    font: inherit;
+    font-size: var(--fs-sm);
+    line-height: 1.45;
+    color: var(--text);
+    text-align: left;
+    transition: background var(--dur-fast) var(--ease), border-color var(--dur-fast) var(--ease);
+    width: 100%;
+    touch-action: manipulation;
+    overflow-wrap: anywhere;
+  }
+  .micro-opt:hover:not(:disabled) { background: var(--foam); border-color: var(--border-strong); }
+  .micro-opt[aria-checked="true"] {
+    background: var(--caramel-tint);
+    border-color: var(--caramel);
+  }
+  .micro-opt.correct {
+    background: var(--success-bg);
+    border-color: var(--success);
+    color: var(--success);
+  }
+  .micro-opt.wrong {
+    background: var(--danger-bg);
+    border-color: var(--danger);
+    color: var(--danger);
+  }
+  .micro-opt.exploring {
+    outline: 2px dashed var(--caramel);
+    outline-offset: -2px;
+  }
+  .micro-opt .opt-marker {
+    flex: 0 0 auto;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    border: 2px solid var(--border-strong);
+    background: var(--foam);
+    display: grid;
+    place-items: center;
+    font-size: 11px;
+    font-weight: 600;
+    color: transparent;
+  }
+  .micro-opt[aria-checked="true"] .opt-marker { border-color: var(--caramel); background: var(--caramel); color: var(--foam); }
+  .micro-opt.correct .opt-marker { border-color: var(--success); background: var(--success); color: var(--foam); }
+  .micro-opt.wrong .opt-marker { border-color: var(--danger); background: var(--danger); color: var(--foam); }
+  .micro-opt .opt-text { flex: 1 1 auto; min-width: 0; }
+  .micro-opt .opt-tag {
+    flex: 0 0 auto;
+    font-size: 10px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    padding: 2px 6px;
+    border-radius: var(--r-sm);
+    color: var(--foam);
+  }
+  .micro-opt.correct .opt-tag { background: var(--success); }
+  .micro-opt.wrong .opt-tag { background: var(--danger); }
+
+  .micro-feedback {
+    margin-top: var(--s-3);
+    font-size: var(--fs-sm);
+    color: var(--text-muted);
+    padding: var(--s-2) var(--s-3);
+    background: var(--cream);
+    border-left: 3px solid var(--caramel);
+    border-radius: var(--r-sm);
+    line-height: 1.55;
+  }
+  .micro-feedback.exploring { border-left-color: var(--caramel); background: var(--caramel-tint); color: var(--roast); }
+
+  /* ============ DECISIONS ============ */
+
+  .decisions { margin-bottom: var(--s-6); }
+
+  .slider-row {
+    background: var(--foam);
+    border: 1px solid var(--border);
+    border-radius: var(--r-lg);
+    padding: var(--s-5) var(--s-6);
+    margin-bottom: var(--s-4);
+    box-shadow: var(--shadow-sm);
+  }
+  .slider-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    gap: var(--s-3);
+    margin-bottom: var(--s-4);
+    flex-wrap: wrap;
+  }
+  .slider-label {
+    font-weight: 500;
+    color: var(--espresso);
+    font-size: var(--fs-base);
+    line-height: 1.3;
+  }
+  .slider-desc {
+    font-size: var(--fs-sm);
+    color: var(--text-muted);
+    margin-top: 2px;
+    line-height: 1.5;
+  }
+  .slider-value-wrap {
+    display: flex;
+    align-items: baseline;
+    gap: var(--s-1);
+  }
+  .slider-prefix {
+    font-family: 'Instrument Serif', Georgia, serif;
+    font-size: var(--fs-lg);
+    color: var(--text-muted);
+  }
+  .slider-num-input {
+    font-family: 'Instrument Serif', Georgia, serif;
+    font-size: clamp(22px, 3.6vw, 30px);
+    font-weight: 400;
+    color: var(--espresso);
+    background: transparent;
+    border: 0;
+    border-bottom: 2px solid var(--border-strong);
+    padding: 2px var(--s-1);
+    width: 9ch;
+    text-align: right;
+    min-height: 44px;
+    -moz-appearance: textfield;
+  }
+  .slider-num-input::-webkit-outer-spin-button,
+  .slider-num-input::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+  }
+  .slider-num-input:focus {
+    outline: none;
+    border-bottom-color: var(--caramel);
+  }
+  .slider-suffix {
+    font-family: 'DM Sans', sans-serif;
+    font-size: var(--fs-sm);
+    color: var(--text-muted);
+  }
+
+  input[type="range"] {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 100%;
+    height: 44px;      /* touch target */
+    background: transparent;
+    cursor: pointer;
+    padding: 0;
+  }
+  input[type="range"]:focus { outline: none; }
+  input[type="range"]::-webkit-slider-runnable-track {
+    height: 6px;
+    background: var(--cream);
+    border-radius: 999px;
+    border: 1px solid var(--border);
+  }
+  input[type="range"]::-moz-range-track {
+    height: 6px;
+    background: var(--cream);
+    border-radius: 999px;
+    border: 1px solid var(--border);
+  }
+  input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: var(--espresso);
+    border: 3px solid var(--foam);
+    box-shadow: 0 0 0 1px var(--border-strong), 0 2px 6px rgba(28,20,16,0.18);
+    margin-top: -12px;
+    cursor: grab;
+  }
+  input[type="range"]::-moz-range-thumb {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: var(--espresso);
+    border: 3px solid var(--foam);
+    box-shadow: 0 0 0 1px var(--border-strong), 0 2px 6px rgba(28,20,16,0.18);
+    cursor: grab;
+  }
+  input[type="range"]:focus-visible::-webkit-slider-thumb { outline: 3px solid var(--caramel); outline-offset: 2px; }
+  input[type="range"]:focus-visible::-moz-range-thumb { outline: 3px solid var(--caramel); outline-offset: 2px; }
+
+  .slider-range-hint {
+    display: flex;
+    justify-content: space-between;
+    color: var(--text-muted);
+    font-size: 11px;
+    margin-top: var(--s-2);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+  }
+
+  /* ============ CHOICE CARDS ============ */
+
+  .choice-group {
+    display: grid;
+    gap: var(--s-3);
+  }
+  .choice {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--s-2);
+    background: var(--foam);
+    border: 1px solid var(--border);
+    border-radius: var(--r-lg);
+    padding: var(--s-4) var(--s-5);
+    min-height: 72px;
+    cursor: pointer;
+    font: inherit;
+    text-align: left;
+    color: var(--text);
+    width: 100%;
+    transition: background var(--dur-fast) var(--ease), border-color var(--dur-fast) var(--ease), transform var(--dur-fast) var(--ease);
+    touch-action: manipulation;
+  }
+  .choice:hover:not(:disabled) {
+    background: var(--cream);
+    border-color: var(--border-strong);
+  }
+  .choice:active:not(:disabled) { transform: scale(0.995); }
+  .choice[aria-checked="true"] {
+    background: var(--caramel-tint);
+    border-color: var(--caramel);
+  }
+  .choice.submitted-answer {
+    background: var(--success-bg);
+    border-color: var(--success);
+  }
+  .choice.exploring {
+    outline: 2px dashed var(--caramel);
+    outline-offset: -2px;
+  }
+  .choice-title {
+    font-weight: 500;
+    color: var(--espresso);
+    font-size: var(--fs-md);
+    line-height: 1.3;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: var(--s-3);
+    width: 100%;
+  }
+  .choice-title .your-badge {
+    font-size: 10px;
+    background: var(--success);
+    color: var(--foam);
+    padding: 2px 8px;
+    border-radius: 999px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    flex: 0 0 auto;
+  }
+  .choice-desc {
+    font-size: var(--fs-sm);
+    color: var(--text-muted);
+    line-height: 1.5;
+  }
+
+  /* ============ ACTIONS ============ */
+
+  .actions {
+    display: flex;
+    gap: var(--s-3);
+    margin-top: var(--s-5);
+    flex-wrap: wrap;
+  }
+  .hint {
+    font-size: var(--fs-sm);
+    color: var(--text-muted);
+    padding: var(--s-3) 0;
+  }
+
+  /* ============ RESULT CARD ============ */
+
+  .result {
+    background: var(--foam);
+    border-radius: var(--r-lg);
+    padding: var(--s-6) var(--s-6);
+    margin-top: var(--s-5);
+    border: 1px solid var(--border);
+    box-shadow: var(--shadow);
+  }
+  .result.exploring {
+    background: var(--caramel-tint);
+    border-color: var(--caramel);
+  }
+  .result-head {
+    display: flex;
+    align-items: center;
+    gap: var(--s-3);
+    margin-bottom: var(--s-4);
+    flex-wrap: wrap;
+  }
+  .tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 3px 10px;
+    border-radius: 999px;
+    font-size: 11px;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+  }
+  .tag-success { background: var(--success); color: var(--foam); }
+  .tag-warn { background: var(--warn); color: var(--foam); }
+  .tag-danger { background: var(--danger); color: var(--foam); }
+  .tag-caramel { background: var(--caramel); color: var(--foam); }
+  .tag-ghost { background: transparent; border: 1px solid var(--border-strong); color: var(--text-muted); }
+
+  .result-head h3 {
+    font-family: 'Instrument Serif', Georgia, serif;
+    font-size: var(--fs-xl);
+    font-weight: 400;
+    color: var(--espresso);
+    line-height: 1.2;
+  }
+
+  .result-body p { color: var(--text); line-height: 1.65; }
+  .result-body p + p { margin-top: var(--s-3); }
+  .result-body strong { font-weight: 500; color: var(--espresso); }
+
+  .breakdown {
+    margin-top: var(--s-5);
+    background: var(--cream);
+    border: 1px solid var(--border);
+    border-radius: var(--r-md);
+    padding: var(--s-4) var(--s-5);
+  }
+  .breakdown-title {
+    font-size: var(--fs-xs);
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: var(--text-muted);
+    margin-bottom: var(--s-3);
+    font-weight: 500;
+  }
+  .breakdown-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: var(--s-3);
+    padding: var(--s-2) 0;
+    border-bottom: 1px dashed var(--border);
+    font-size: var(--fs-sm);
+  }
+  .breakdown-row:last-child { border-bottom: 0; }
+  .breakdown-row.total {
+    border-top: 2px solid var(--border-strong);
+    border-bottom: 0;
+    margin-top: var(--s-2);
+    padding-top: var(--s-3);
+    font-weight: 500;
+    color: var(--espresso);
+    font-size: var(--fs-base);
+  }
+  .breakdown-label { flex: 1 1 auto; color: var(--text); min-width: 0; display: flex; align-items: center; gap: var(--s-2); flex-wrap: wrap;}
+  .breakdown-val { font-variant-numeric: tabular-nums; text-align: right; flex: 0 0 auto; overflow-wrap: anywhere; }
+  .breakdown-val.neg { color: var(--danger); }
+  .breakdown-val.pos { color: var(--success); }
+
+  .why-matters {
+    margin-top: var(--s-5);
+    padding-top: var(--s-4);
+    border-top: 1px solid var(--border);
+    font-size: var(--fs-sm);
+    color: var(--text-muted);
+    line-height: 1.6;
+  }
+  .why-matters strong { color: var(--caramel); font-weight: 500; text-transform: uppercase; letter-spacing: 0.08em; font-size: var(--fs-xs); display: block; margin-bottom: var(--s-1);}
+
+  .explore-hint {
+    margin-top: var(--s-4);
+    padding: var(--s-3) var(--s-4);
+    background: var(--cream);
+    border: 1px dashed var(--border-strong);
+    border-radius: var(--r-md);
+    font-size: var(--fs-sm);
+    color: var(--text-muted);
+    line-height: 1.55;
+  }
+  .explore-hint strong { color: var(--espresso); font-weight: 500; }
+
+  /* ============ FINAL SCREEN ============ */
+
+  .final-wrap { text-align: center; padding: var(--s-6) var(--s-3); }
+  .final-score {
+    font-family: 'Instrument Serif', Georgia, serif;
+    font-size: clamp(72px, 18vw, 140px);
+    line-height: 1;
+    color: var(--caramel);
+    margin: var(--s-5) 0 var(--s-2);
+    letter-spacing: -0.02em;
+  }
+  .final-score-of {
+    color: var(--text-muted);
+    font-size: clamp(22px, 4vw, 32px);
+  }
+  .final-rating {
+    font-family: 'Instrument Serif', Georgia, serif;
+    font-size: var(--fs-2xl);
+    font-style: italic;
+    color: var(--espresso);
+    margin-bottom: var(--s-6);
+  }
+  .final-summary {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: var(--s-4);
+    margin-bottom: var(--s-8);
+    text-align: left;
+    align-items: stretch;
+  }
+  .final-card {
+    background: var(--foam);
+    border: 1px solid var(--border);
+    border-radius: var(--r-md);
+    padding: var(--s-5);
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+  }
+  @media (max-width: 720px) {
+    .final-summary { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  }
+  @media (max-width: 420px) {
+    .final-summary { grid-template-columns: minmax(0, 1fr); }
+  }
+  .final-card-label {
+    font-size: var(--fs-xs);
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: var(--text-muted);
+    margin-bottom: var(--s-2);
+  }
+  .final-card-val {
+    font-family: 'Instrument Serif', Georgia, serif;
+    font-size: var(--fs-xl);
+    color: var(--espresso);
+    line-height: 1.15;
+  }
+  .final-card-val.neg { color: var(--danger); }
+  .final-card-val.pos { color: var(--success); }
+  .final-card-note {
+    font-size: var(--fs-sm);
+    color: var(--text-muted);
+    margin-top: var(--s-2);
+    line-height: 1.5;
+  }
+
+  .final-lessons {
+    text-align: left;
+    background: var(--foam);
+    border: 1px solid var(--border);
+    border-radius: var(--r-lg);
+    padding: var(--s-6);
+    margin-bottom: var(--s-8);
+  }
+  .final-lessons h3 {
+    font-family: 'Instrument Serif', Georgia, serif;
+    font-size: var(--fs-xl);
+    font-weight: 400;
+    margin-bottom: var(--s-4);
+    color: var(--espresso);
+  }
+  .final-lessons ul { list-style: none; padding: 0; margin: 0; }
+  .final-lessons li {
+    padding: var(--s-3) 0;
+    border-bottom: 1px dashed var(--border);
+    color: var(--text);
+    line-height: 1.6;
+    font-size: var(--fs-sm);
+    display: flex;
+    gap: var(--s-3);
+  }
+  .final-lessons li:last-child { border-bottom: 0; }
+  .final-lessons li::before {
+    content: '→';
+    color: var(--caramel);
+    font-weight: 500;
+    flex: 0 0 auto;
+  }
+
+  /* ============ FOOTER / CITATIONS ============ */
+
+  .site-footer {
+    margin-top: var(--s-10);
+    padding: var(--s-6) var(--s-4) var(--s-4);
+    border-top: 1px solid var(--border);
+    color: var(--text-muted);
+    font-size: var(--fs-xs);
+    line-height: 1.6;
+    text-align: center;
+  }
+  .site-footer p + p { margin-top: var(--s-1); }
+  .site-footer a {
+    color: var(--caramel);
+    text-decoration: underline;
+    text-decoration-color: var(--border-strong);
+    text-underline-offset: 2px;
+  }
+  .site-footer a:hover { text-decoration-color: var(--caramel); }
+
+  /* ============ RESPONSIVE ============ */
+
+  @media (max-width: 640px) {
+    .scenario, .concept, .slider-row, .micro-block, .result, .setup-card {
+      padding: var(--s-4) var(--s-4);
+    }
+    .result { padding: var(--s-5) var(--s-4); }
+    .choice { padding: var(--s-4); }
+  }
+
+  @media (max-width: 480px) {
+    #app { padding: max(var(--s-4), env(safe-area-inset-top)) max(var(--s-3), env(safe-area-inset-right)) max(var(--s-6), env(safe-area-inset-bottom)) max(var(--s-3), env(safe-area-inset-left)); }
+    .metric-strip { grid-template-columns: repeat(2, 1fr); gap: var(--s-3); }
+    .metric-val { font-size: 20px; }
+    .slider-head { align-items: flex-start; }
+    .slider-value-wrap { align-self: flex-end; }
+    .slider-num-input { font-size: 22px; width: 8ch; }
+    .quarter-label { font-size: clamp(32px, 9vw, 44px); }
+    .actions .btn, .actions .btn-ghost { width: 100%; }
+    .breadcrumb { gap: var(--s-1); }
+    .bc-dot { padding: 6px var(--s-2); font-size: 11px; }
+  }
+
+  @media (max-width: 360px) {
+    .site-header { padding-top: var(--s-2); }
+    .metric-label { font-size: 9px; }
+    .metric-val { font-size: 18px; }
+    .bc-dot .mini-score { display: none; }
+    h1.title { font-size: 42px; }
+  }
+
+  /* ============ UTILITY ============ */
+
+  .sr-only {
+    position: absolute;
+    width: 1px; height: 1px;
+    padding: 0; margin: -1px;
+    overflow: hidden; clip: rect(0,0,0,0);
+    white-space: nowrap; border: 0;
+  }
+
+  .no-wrap { white-space: nowrap; }
+
+</style>
+</head>
+<body>
+
+<a class="skip-link" href="#main">Skip to main content</a>
+
+<div id="app">
+  <main id="main" role="main">
+    <div id="screens"></div>
+  </main>
+
+  <footer class="site-footer" role="contentinfo">
+    <p><strong>Budget Boss</strong> is an educational simulation built for MBA core accounting. Crestline Coffee Co. is fictional; all figures are illustrative.</p>
+    <p>Typefaces: <a href="https://fonts.google.com/specimen/DM+Sans" rel="noopener">DM Sans</a> and <a href="https://fonts.google.com/specimen/Instrument+Serif" rel="noopener">Instrument Serif</a> via Google Fonts, licensed under the SIL Open Font License.</p>
+    <p>Texture overlay is an inline SVG noise filter — no third-party assets.</p>
+  </footer>
+</div>
+
+<div id="live-region" class="sr-only" aria-live="polite" aria-atomic="true"></div>
+
+<script>
+/* ============================================================================
+   BUDGET BOSS — Crestline Coffee Co.
+   Single-file educational simulation. All state in memory; no persistence.
+   ========================================================================= */
+
+const fmt = (n) => {
+  const neg = n < 0;
+  const abs = Math.abs(n);
+  const s = abs >= 1000
+    ? '$' + abs.toLocaleString('en-US', { maximumFractionDigits: 0 })
+    : '$' + abs.toLocaleString('en-US', { maximumFractionDigits: 0 });
+  return neg ? '−' + s : s;
+};
+const fmtSigned = (n) => (n > 0 ? '+' : n < 0 ? '−' : '') + '$' + Math.abs(n).toLocaleString('en-US', { maximumFractionDigits: 0 });
+const fuChip = (label) => label === 'F'
+  ? '<span class="tag tag-success" title="Favorable">F</span>'
+  : '<span class="tag tag-danger" title="Unfavorable">U</span>';
+const fu = (n, kind) => {
+  // kind: 'rev' (actual<budget=U) or 'cost' (actual<budget=F)
+  if (n === 0) return '';
+  if (kind === 'rev') return n >= 0 ? 'F' : 'U';
+  return n >= 0 ? 'U' : 'F';
+};
+
+// ---------------------------------------------------------------------------
+// QUARTER CONFIG
+// ---------------------------------------------------------------------------
+
+const QUARTERS = [
+  {
+    n: 1,
+    subtitle: 'Plan the year',
+    scenario: `
+      <p>You just took over as GM of <strong>Crestline Coffee Co.</strong>, a three-year-old specialty roaster in a college town. Last year the shop closed at <strong>$480,000 in revenue</strong>, with a ~60% gross margin (beans, milk, and cups ran ~40% of sales) and roughly break-even operating income after fixed costs.</p>
+      <p>It is early January. The ownership group wants a <strong>one-year budget</strong>: a revenue target, and how much you plan to spend on the two biggest controllable cost buckets — <em>variable costs</em> (beans, milk, cups, card fees) and <em>fixed costs</em> (lease, salaries, insurance, utilities).</p>
+      <p>Variable costs scale with revenue. Fixed costs are largely committed for the year. Set the budget you'd defend.</p>
+    `,
+    concept: {
+      title: 'Concept — Budgeting is a forecast <em>and</em> a commitment',
+      body: 'A budget isn\'t a wish. It\'s what you\'ll be <em>measured against</em> every quarter. Overstate revenue and everything downstream looks bad; overstate costs and you\'ve padded away your own margin target.',
+      note: 'Industry research consistently shows roughly two-thirds of corporate budgets miss their revenue targets. Optimism bias is the default failure mode.',
+    },
+    micro: [
+      {
+        prompt: 'Which of these is a <em>variable</em> cost for Crestline?',
+        opts: [
+          { id: 'a', text: 'Roasted beans purchased from the supplier', correct: true, explain: 'Correct. Bean cost scales directly with cups sold.' },
+          { id: 'b', text: 'Monthly lease on the roastery space', correct: false, explain: 'That\'s a fixed cost — you owe the landlord the same amount whether you sell one bag or one thousand.' },
+          { id: 'c', text: 'Salary for the full-time operations manager', correct: false, explain: 'Salaried pay is fixed within the year; it doesn\'t move with each cup sold.' },
+          { id: 'd', text: 'The annual equipment lease on the espresso machine', correct: false, explain: 'An equipment lease is a committed fixed cost for the year.' },
+        ],
+      },
+      {
+        prompt: 'If revenue drops <strong>10%</strong> from plan, by roughly how much do <em>variable</em> costs move?',
+        opts: [
+          { id: 'a', text: 'Down ~10%', correct: true, explain: 'Correct. Variable costs are defined as moving proportionally with revenue.' },
+          { id: 'b', text: 'They don\'t move', correct: false, explain: 'That describes fixed costs, not variable costs.' },
+          { id: 'c', text: 'Down ~40% (the VC ratio)', correct: false, explain: 'The ratio tells you <em>what share</em> of each dollar is variable, not how fast total variable costs shrink when volume falls.' },
+          { id: 'd', text: 'It depends on fixed costs', correct: false, explain: 'Fixed costs are, by definition, independent of short-run volume changes.' },
+        ],
+      },
+    ],
+    decision: {
+      kind: 'sliders',
+      inputs: [
+        { id: 'rev_target', label: 'Annual revenue target', desc: 'Last year: $480,000. Room to plan an expansion if you want.', min: 400000, max: 1200000, step: 5000, default: 552000, unit: '' },
+        { id: 'vc_ratio', label: 'Variable cost ratio', desc: 'Variable costs as % of revenue. Industry benchmark: 38–42%.', min: 30, max: 55, step: 1, default: 40, unit: '%', isPercent: true },
+        { id: 'fc_budget', label: 'Fixed cost budget', desc: 'Lease, salaries, insurance, utilities for the full year. Increase to fund new hires.', min: 180000, max: 500000, step: 5000, default: 240000, unit: '' },
+      ],
+      evaluate(vals) {
+        const { rev_target, vc_ratio, fc_budget } = vals;
+        const vc = rev_target * (vc_ratio / 100);
+        const oi = rev_target - vc - fc_budget;
+        const growth = (rev_target - 480000) / 480000 * 100;
+        let points = 20, tone = 'tag-success', title = 'Solid plan', notes = [];
+
+        if (growth > 25) { points -= 8; tone = 'tag-danger'; title = 'Aggressive — optimism bias territory'; notes.push(`Targeting <strong>${growth.toFixed(0)}% growth</strong> is well above what a mature specialty-coffee market typically delivers. When Q2 and Q4 roll in, this target will set a high bar that a single soft quarter blows through.`); }
+        else if (growth > 15) { points -= 3; tone = 'tag-warn'; title = 'Ambitious but reasonable'; notes.push(`<strong>${growth.toFixed(0)}% growth</strong> assumes real demand expansion — doable if marketing or wholesale lands, risky otherwise.`); }
+        else if (growth < 0) { points -= 5; tone = 'tag-warn'; title = 'Conservative to a fault'; notes.push(`Budgeting <em>below</em> last year signals you expect decline. That may be prudent — or it may be sandbagging. Either way, owners will push back.`); }
+        else { notes.push(`<strong>${growth.toFixed(0)}% growth</strong> is in the grounded-but-ambitious zone that most outside reviewers will accept.`); }
+
+        if (vc_ratio < 35) { points -= 4; notes.push(`A <strong>${vc_ratio}%</strong> variable cost ratio is well below the specialty-coffee benchmark. You\'re either assuming heroic procurement savings or under-budgeting a real cost.`); }
+        else if (vc_ratio > 48) { points -= 2; notes.push(`A <strong>${vc_ratio}%</strong> variable cost ratio leaves very little room for gross margin. Double-check pricing.`); }
+
+        if (oi < 0) { points -= 5; notes.push(`This plan <strong>budgets a loss</strong>. Ownership will want to see a credible path to at least break-even.`); }
+        else if (oi > 120000) { points -= 2; notes.push(`<strong>${fmt(oi)}</strong> in budgeted operating income is optimistic on a ${fmt(rev_target)} top line — make sure fixed costs aren\'t understated.`); }
+
+        points = Math.max(0, points);
+        return {
+          points,
+          tone,
+          title,
+          body: notes.join(' '),
+          breakdown: [
+            { label: 'Revenue target', val: rev_target, cls: 'pos' },
+            { label: `Variable costs (${vc_ratio}% of revenue)`, val: -vc, cls: 'neg' },
+            { label: 'Fixed cost budget', val: -fc_budget, cls: 'neg' },
+            { label: 'Budgeted operating income', val: oi, cls: oi >= 0 ? 'pos' : 'neg', total: true },
+          ],
+          why: 'A realistic, defensible budget is the baseline every variance in Q2 and Q4 will be measured against. Set it too high and you guarantee unfavorable news later.',
+        };
+      },
+    },
+  },
+
+  // ========================= Q2 =========================
+  {
+    n: 2,
+    subtitle: 'Variance analysis — who owns the miss?',
+    scenario: (s) => {
+      const target = s.decisions[0]?.rev_target || 480000;
+      const q2Bud = Math.round(target / 4);
+      return `
+        <p>It\'s early April. Q2 just closed. Your annual plan prorated to a <strong>${fmt(q2Bud)}</strong> quarterly revenue budget. A new competitor opened two blocks down in February, and your Q2 actuals came in:</p>
+        <p><strong>Revenue: $118,000.</strong> Variable costs ran <strong>$51,000</strong> against a budget of <strong>${fmt(Math.round(q2Bud * 0.4))}</strong>. Fixed costs landed roughly on plan.</p>
+        <p>Before strategy, ownership wants a clean <em>variance analysis</em>: which buckets are favorable, which are unfavorable, and what it means for operating income.</p>
+      `;
+    },
+    concept: {
+      title: 'Concept — <em>Favorable</em> and <em>Unfavorable</em> flip signs between revenue and costs',
+      body: 'For <em>revenue</em>, Actual < Budget is <em>unfavorable</em>. For <em>costs</em>, Actual < Budget is <em>favorable</em> (you spent less than you planned).',
+      note: 'Net effect on operating income = Revenue variance − Cost variance. Dropping the second minus sign is how students lose the easy points on a variance exam.',
+    },
+    micro: (s) => {
+      const target = s.decisions[0]?.rev_target || 480000;
+      const q2Bud = Math.round(target / 4);
+      const vcBud = Math.round(q2Bud * 0.4);
+      const revVar = 118000 - q2Bud;
+      const vcVar = 51000 - vcBud;
+      const oiImpact = revVar - vcVar;
+      return [
+        {
+          prompt: `Revenue came in at $118,000 against your budget of ${fmt(q2Bud)}. The <strong>revenue variance</strong> is…`,
+          opts: [
+            { id: 'a', text: 'Favorable — actual is lower than budget', correct: false, explain: 'Lower revenue than budgeted is <em>unfavorable</em>. On revenue, actual-below-budget hurts you.' },
+            { id: 'b', text: 'Unfavorable — actual is below budget', correct: revVar < 0, explain: revVar < 0 ? 'Correct. Actual revenue below budget is always unfavorable (U).' : 'On these numbers, actual revenue actually came in above budget — so the variance is favorable.' },
+            { id: 'c', text: 'Favorable — actual is above budget', correct: revVar >= 0, explain: revVar >= 0 ? 'Correct. Actual revenue above budget is favorable (F).' : 'Actual revenue is below budget here, so this is unfavorable.' },
+            { id: 'd', text: 'Zero — there\'s no variance', correct: false, explain: `The variance is ${fmtSigned(revVar)}, clearly not zero.` },
+          ],
+        },
+        {
+          prompt: `Variable costs came in at $51,000 vs. a budget of ${fmt(vcBud)}. The <strong>variable cost variance</strong> is…`,
+          opts: [
+            { id: 'a', text: 'Favorable — you spent less than planned', correct: vcVar < 0, explain: vcVar < 0 ? 'Correct. On costs, spending less than budgeted is favorable (F).' : 'Here you actually spent more than budgeted, so this is unfavorable.' },
+            { id: 'b', text: 'Unfavorable — you spent less than planned', correct: false, explain: 'Sign convention flips on costs. Less spending than budgeted is <em>favorable</em>.' },
+            { id: 'c', text: 'Unfavorable — you spent more than planned', correct: vcVar > 0, explain: vcVar > 0 ? 'Correct — overspending is unfavorable (U).' : 'On these numbers you actually spent less than budgeted, so this is favorable.' },
+            { id: 'd', text: 'Not calculable without fixed costs', correct: false, explain: 'Variable cost variance is just actual VC − budgeted VC. Fixed costs have their own variance.' },
+          ],
+        },
+        {
+          prompt: 'What\'s the <strong>net effect on operating income</strong> from those two variances?',
+          opts: [
+            { id: 'a', text: `${fmtSigned(revVar + vcVar)} — just add the two raw variances`, correct: false, explain: 'This is the classic trap. Adding raw variances double-counts the favorable cost variance in the wrong direction.' },
+            { id: 'b', text: `${fmtSigned(oiImpact)} — revenue variance minus cost variance`, correct: true, explain: 'Correct. OI impact = Rev variance − Cost variance. A favorable cost variance <em>helps</em> OI, so it must be subtracted (a negative cost var means a positive impact on OI).' },
+            { id: 'c', text: `${fmt(-51000 + 118000)} — just contribution after variable costs`, correct: false, explain: 'That\'s gross contribution, not a variance. You\'re mixing levels.' },
+            { id: 'd', text: 'Zero — the variances cancel', correct: false, explain: 'They don\'t cancel on these numbers. Run the math explicitly.' },
+          ],
+        },
+      ];
+    },
+    decision: {
+      kind: 'choice',
+      prompt: 'Owners want a plan for the back half. Pick one:',
+      options: [
+        {
+          id: 'price',
+          title: 'Raise prices 8% across the board',
+          desc: 'Protect margin. Risk: a competitor just opened; demand elasticity is unknown.',
+          points: 12,
+          tone: 'tag-warn',
+          resultTitle: 'Defensive move, but risky timing',
+          body: 'Holding margin is valid, but raising prices the quarter a new competitor opens is the textbook wrong moment. Volume may fall further — you\'ve stacked one miss on top of another.',
+        },
+        {
+          id: 'marketing',
+          title: 'Invest $8K in local marketing + a loyalty program',
+          desc: 'Defend share. Operating income takes a hit this quarter; aim for Q3/Q4 recovery.',
+          points: 20,
+          tone: 'tag-success',
+          resultTitle: 'Strongest defense given the diagnosis',
+          body: 'The variance diagnosis points to <em>revenue</em> (not cost discipline) as the issue. Spending to defend revenue in a contested market is the right intervention — and $8K is a measured, not heroic, bet.',
+        },
+        {
+          id: 'cut',
+          title: 'Cut variable costs 5% by switching to a cheaper bean',
+          desc: 'Protect operating income this quarter. Risk: quality perception in a specialty market.',
+          points: 6,
+          tone: 'tag-danger',
+          resultTitle: 'Addresses the wrong problem',
+          body: 'Variable costs came in <em>favorable</em> this quarter — they\'re not the issue. Cutting bean quality in a specialty roastery to fix a revenue problem trades short-term margin for long-term positioning.',
+        },
+        {
+          id: 'nothing',
+          title: 'Wait a quarter. Monitor; don\'t overreact.',
+          desc: 'One data point isn\'t a trend. Hold the plan; reassess after Q3.',
+          points: 10,
+          tone: 'tag-warn',
+          resultTitle: 'Disciplined — or passive?',
+          body: '"Don\'t overreact" is sometimes the right call. But when the cause is known (new competitor) and cash is finite, waiting is how small misses compound.',
+        },
+      ],
+      evaluate(choice, s) {
+        const target = s.decisions[0]?.rev_target || 480000;
+        const q2Bud = Math.round(target / 4);
+        const vcBud = Math.round(q2Bud * 0.4);
+        const revVar = 118000 - q2Bud;
+        const vcVar = 51000 - vcBud;
+        const oiImpact = revVar - vcVar;
+        return {
+          points: choice.points,
+          tone: choice.tone,
+          title: choice.resultTitle,
+          body: choice.body,
+          breakdown: [
+            { label: `Revenue variance ${fuChip(fu(revVar, 'rev'))}`, val: revVar, cls: revVar >= 0 ? 'pos' : 'neg' },
+            { label: `Variable cost variance ${fuChip(fu(vcVar, 'cost'))}`, val: -vcVar, cls: vcVar <= 0 ? 'pos' : 'neg', note: 'sign flipped for OI impact' },
+            { label: 'Net effect on operating income', val: oiImpact, cls: oiImpact >= 0 ? 'pos' : 'neg', total: true, tag: fuChip(fu(oiImpact, 'rev')) },
+          ],
+          why: 'The F/U convention isn\'t arbitrary — it tracks <em>directional impact on profit</em>. Adding raw variances the wrong way is the single most common mistake on this topic.',
+        };
+      },
+    },
+  },
+
+  // ========================= Q3 =========================
+  {
+    n: 3,
+    subtitle: 'Profit ≠ Cash',
+    scenario: `
+      <p>Q3 is here and the books look healthy: <strong>$132,000 in revenue, $18,000 operating income</strong>. On paper, a good quarter.</p>
+      <p>But two things also happened on the cash side:</p>
+      <p>A downtown hotel placed its first <strong>$25,000 wholesale order</strong> on Net-30 terms — revenue recognized, cash not collected. And to lock in next quarter\'s holiday rush, you <strong>prepaid $30,000</strong> for specialty beans to be delivered in Q4.</p>
+      <p>Both were good business decisions. Neither is an expense this quarter. But both drain cash.</p>
+    `,
+    concept: {
+      title: 'Concept — On accrual books, profit is not cash',
+      body: 'Revenue hits the income statement when <em>earned</em>, not when <em>collected</em>. Expenses hit when <em>incurred</em>, not when <em>paid</em>. Cash flow fills the gap — and the gap can be huge in a growing or inventory-heavy business.',
+      note: 'Indirect method: start from operating income, subtract increases in receivables and prepaid assets (cash tied up), add back depreciation (no cash out).',
+    },
+    micro: [
+      {
+        prompt: 'The $30,000 prepaid bean purchase — what\'s the <em>immediate</em> balance sheet effect?',
+        opts: [
+          { id: 'a', text: 'Cash ↓ $30K, Prepaid Inventory ↑ $30K — total assets unchanged', correct: true, explain: 'Correct. The journal entry is Dr. Prepaid Inventory $30K / Cr. Cash $30K. One asset for another; total assets don\'t move.' },
+          { id: 'b', text: 'COGS ↑ $30K this quarter', correct: false, explain: 'Not yet. Prepaid Inventory becomes COGS only when the beans are <em>sold</em>. That happens in Q4.' },
+          { id: 'c', text: 'Liabilities ↑ $30K', correct: false, explain: 'You paid cash — nothing was borrowed. Liabilities are unchanged.' },
+          { id: 'd', text: 'Equity ↓ $30K', correct: false, explain: 'Equity only moves when net income or dividends change. Converting cash to inventory is neutral to equity.' },
+        ],
+      },
+      {
+        prompt: 'The $25,000 wholesale receivable — is it a <strong>cash inflow</strong> this quarter?',
+        opts: [
+          { id: 'a', text: 'Yes — the sale closed, so cash arrives with it', correct: false, explain: 'That\'s cash-basis thinking. On accrual books, <em>revenue</em> is recognized at delivery; cash arrives on Net-30.' },
+          { id: 'b', text: 'No — revenue is recognized, but cash is collected next quarter', correct: true, explain: 'Correct. The receivable <em>grows</em>. Income went up by $25K, cash did not.' },
+          { id: 'c', text: 'Only half counts — the rest is unearned', correct: false, explain: 'The whole order was delivered, so the whole $25K is earned. The split is between revenue (recognized) and cash (not yet received), not between earned and unearned.' },
+          { id: 'd', text: 'Yes, if they paid a deposit', correct: false, explain: 'On Net-30 terms, typically no deposit — but even if there were, only the deposit would be cash this quarter.' },
+        ],
+      },
+    ],
+    decision: {
+      kind: 'choice',
+      prompt: `What do you do about working capital this quarter?`,
+      options: [
+        {
+          id: 'loc',
+          title: 'Draw $40K from the existing line of credit',
+          desc: 'Interest-bearing, but the line already exists. Covers the gap; preserves supplier trust.',
+          points: 20,
+          tone: 'tag-success',
+          resultTitle: 'Right tool for a timing problem',
+          body: 'Negative cash flow here is a <em>timing</em> problem, not a profitability problem. A short-term line of credit is exactly what\'s built for this. The $25K A/R will convert, the prepaid beans will sell, and the LOC gets paid down in Q4.',
+        },
+        {
+          id: 'factor',
+          title: 'Factor the $25K receivable at 2% discount',
+          desc: 'Get roughly $24,500 in cash now. Fast, but expensive annualized.',
+          points: 10,
+          tone: 'tag-warn',
+          resultTitle: 'Works, but overpriced for a Net-30',
+          body: '2% on a 30-day receivable annualizes to ~24%. Factoring is a valid tool for businesses without credit, but you have a line of credit. You\'ve burned $500 on timing you could have bridged cheaper.',
+        },
+        {
+          id: 'delay',
+          title: 'Delay the $30K prepaid bean purchase',
+          desc: 'Avoid the cash outflow this quarter. Take your chances on Q4 inventory.',
+          points: 3,
+          tone: 'tag-danger',
+          resultTitle: 'Solves cash, breaks the business',
+          body: 'You locked in the prepaid order for a reason — the Q4 holiday rush. Pulling it to manage a short-term cash gap risks empty shelves during your highest-revenue quarter. Penny wise, pound foolish.',
+        },
+        {
+          id: 'nothing',
+          title: 'Do nothing — profit is positive, cash will sort itself out',
+          desc: 'Trust the accrual story.',
+          points: 0,
+          tone: 'tag-danger',
+          resultTitle: 'This is how profitable businesses go broke',
+          body: 'The entire teaching moment of this quarter: positive operating income does not mean positive cash. Cash from operations this quarter is <strong>negative $37,000</strong>. Without action, you\'ll bounce a supplier payment before Q4 revenue hits the bank.',
+        },
+      ],
+      evaluate(choice) {
+        return {
+          points: choice.points,
+          tone: choice.tone,
+          title: choice.resultTitle,
+          body: choice.body,
+          breakdown: [
+            { label: 'Q3 operating income', val: 18000, cls: 'pos' },
+            { label: 'Less: increase in A/R (wholesale sale, cash not collected)', val: -25000, cls: 'neg' },
+            { label: 'Less: prepaid inventory (cash paid, expense deferred)', val: -30000, cls: 'neg' },
+            { label: 'Cash from operations this quarter', val: -37000, cls: 'neg', total: true },
+          ],
+          why: 'Accrual profit answers "how much value did I create?" Cash flow answers "will I make payroll on Friday?" You need both — and the gap is where growing businesses get squeezed.',
+        };
+      },
+    },
+  },
+
+  // ========================= Q4 =========================
+  {
+    n: 4,
+    subtitle: 'Close the year — and build next year\'s plan',
+    scenario: (s) => {
+      const budRev = s.decisions[0]?.rev_target || 550000;
+      const actRev = 512000;
+      const delta = actRev - budRev;
+      const deltaPct = Math.abs(delta / budRev * 100);
+      const dir = delta >= 0 ? 'above' : 'below';
+      return `
+        <p>Year-end. Q4 was strong thanks to the prepaid beans and wholesale traction. The annual numbers:</p>
+        <p><strong>Revenue: $512,000</strong> against your annual budget of <strong>${fmt(budRev)}</strong> — ${deltaPct.toFixed(1)}% ${dir} plan. Fixed costs came in <strong>$12,000 under budget</strong> (you never hired the second barista). Variable cost ratio landed at 39% — within plan.</p>
+        <p>Ownership has a board meeting next month and wants <em>next year\'s budget</em>. The question is: what\'s the right starting point?</p>
+      `;
+    },
+    concept: {
+      title: 'Concept — The anchor matters more than the forecast',
+      body: 'Next year\'s budget inherits every bias in this year\'s. Start from a <em>stale</em> anchor — the board\'s growth target, last year\'s plan — and you\'ll repeat the same variances. Start from <em>this year\'s actuals</em> and at least you\'re forecasting from reality.',
+      note: 'The best budget isn\'t the most optimistic or the most conservative — it\'s the most <em>defensible</em>. "Here\'s what actually happened; here\'s what we\'re changing" beats every other framing.',
+    },
+    micro: (s) => {
+      const budRev = s.decisions[0]?.rev_target || 550000;
+      const actRev = 512000;
+      const revVar = actRev - budRev;
+      const revVarLabel = fu(revVar, 'rev');
+      return [
+        {
+          prompt: `Annual revenue came in at ${fmt(actRev)} vs. your budget of ${fmt(budRev)}. That variance is…`,
+          opts: [
+            { id: 'a', text: `${fmtSigned(revVar)}, Favorable`, correct: revVarLabel === 'F', explain: revVarLabel === 'F' ? 'Correct. Actual above budget on revenue is favorable.' : 'Actual is below budget here — that\'s unfavorable.' },
+            { id: 'b', text: `${fmtSigned(revVar)}, Unfavorable`, correct: revVarLabel === 'U', explain: revVarLabel === 'U' ? 'Correct. Actual below budget on revenue is unfavorable (U).' : 'Actual is above budget here, so this is favorable.' },
+            { id: 'c', text: 'Zero — within rounding', correct: false, explain: `A ${fmt(Math.abs(revVar))} gap is not rounding.` },
+            { id: 'd', text: 'Not meaningful without comparing to last year', correct: false, explain: 'Variance is Actual − Budget. Prior year is a different comparison (year-over-year growth).' },
+          ],
+        },
+        {
+          prompt: 'Fixed costs came in <strong>$12,000 under budget</strong> because you never made a planned hire. That variance is…',
+          opts: [
+            { id: 'a', text: 'Favorable — you spent less than planned', correct: true, explain: 'Correct. On costs, actual below budget is favorable. But watch out: not hiring may have <em>caused</em> the revenue shortfall — the F variance can hide a real problem.' },
+            { id: 'b', text: 'Unfavorable — you spent less than planned', correct: false, explain: 'Cost sign convention: actual-below-budget is <em>favorable</em>. Keep them straight.' },
+            { id: 'c', text: 'Neutral — you just deferred the hire', correct: false, explain: 'Variance analysis compares <em>this period\'s</em> actual to <em>this period\'s</em> budget. What you might do next period doesn\'t change this period\'s variance.' },
+            { id: 'd', text: 'Unfavorable — under-hiring is always bad', correct: false, explain: 'Favorability is about dollars spent vs. plan, not about whether the decision was strategically wise.' },
+          ],
+        },
+        {
+          prompt: 'Building next year\'s budget, the best starting point is…',
+          opts: [
+            { id: 'a', text: 'This year\'s actual results, adjusted for what you know changes next year', correct: true, explain: 'Correct. Actuals are the only data point you can defend with evidence. Adjust for known changes (competitor, hire, pricing) rather than starting fresh.' },
+            { id: 'b', text: 'This year\'s budget — one more try', correct: false, explain: 'Rolling forward a budget that missed is how you repeat the same mistake. Anchor to reality, not to the prior forecast.' },
+            { id: 'c', text: 'The board\'s growth target, worked backward', correct: false, explain: 'Reverse-engineering to a predetermined number is how optimism bias gets baked in. Top-down should pressure-test bottom-up, not replace it.' },
+            { id: 'd', text: 'An industry benchmark report', correct: false, explain: 'Benchmarks inform — they don\'t replace your own operational data. Crestline isn\'t the industry.' },
+          ],
+        },
+      ];
+    },
+    decision: {
+      kind: 'choice',
+      prompt: 'Owners want your recommended Year 2 budget approach:',
+      options: [
+        {
+          id: 'actuals',
+          title: 'Base next year on this year\'s actuals, adjusted for the competitor and the planned hire',
+          desc: 'Defensible. Ties every line to evidence. Easy to explain the deltas.',
+          points: 20,
+          tone: 'tag-success',
+          resultTitle: 'The defensible default',
+          body: 'Starting from actuals grounds every line in something you can point to. When ownership asks "why this number?" you have a direct answer. This is how mature FP&A teams build.',
+        },
+        {
+          id: 'growth',
+          title: 'Match the board\'s 15% growth target on revenue',
+          desc: 'Top-down; easy politically. No bottom-up evidence behind it.',
+          points: 6,
+          tone: 'tag-danger',
+          resultTitle: 'Optimism bias, on a silver platter',
+          body: 'Anchoring to a target instead of data is exactly how this year\'s miss happened. 15% growth on top of a miss means signing up to miss by even more.',
+        },
+        {
+          id: 'sandbag',
+          title: 'Budget 3% below this year\'s actual revenue — play it safe',
+          desc: 'Guaranteed favorable variances. Ownership will smell it.',
+          points: 10,
+          tone: 'tag-warn',
+          resultTitle: 'Sandbagging catches up',
+          body: 'Artificially low targets produce "favorable" variances that tell nobody anything. Sophisticated owners spot this immediately and lose trust in your forecasts.',
+        },
+        {
+          id: 'zero',
+          title: 'Zero-based: rebuild every line from scratch with current operations',
+          desc: 'Most rigorous. Takes weeks. Arguably overkill for a small business.',
+          points: 14,
+          tone: 'tag-warn',
+          resultTitle: 'Rigorous, maybe overbuilt',
+          body: 'Zero-based budgeting is powerful when operations have drifted or the org is bloated. For a three-year-old coffee shop, it\'s process for process\'s sake — most of the answer is already in your actuals.',
+        },
+      ],
+      evaluate(choice, s) {
+        const budRev = s.decisions[0]?.rev_target || 550000;
+        const actRev = 512000;
+        const revVar = actRev - budRev;
+        return {
+          points: choice.points,
+          tone: choice.tone,
+          title: choice.resultTitle,
+          body: choice.body,
+          breakdown: [
+            { label: `Annual revenue variance ${fuChip(fu(revVar, 'rev'))}`, val: revVar, cls: revVar >= 0 ? 'pos' : 'neg' },
+            { label: `Fixed cost variance ${fuChip('F')} (under-hired)`, val: 12000, cls: 'pos', note: 'favorable sign' },
+            { label: 'Variable cost ratio', val: 0, cls: '', note: '39% actual vs. 40% budget — on plan' },
+            { label: 'Net year-end operating income impact vs. budget', val: revVar + 12000, cls: (revVar + 12000) >= 0 ? 'pos' : 'neg', total: true, tag: fuChip(fu(revVar + 12000, 'rev')) },
+          ],
+          why: 'The budget you build <em>next</em> year is the real output of this year\'s variance analysis. Anchoring choices are where optimism bias either compounds or gets corrected.',
+        };
+      },
+    },
+  },
+];
+
+// ---------------------------------------------------------------------------
+// STATE
+// ---------------------------------------------------------------------------
+
+const state = {
+  started: false,
+  finished: false,
+  activeQuarter: 0,        // 0..3 — the furthest quarter the player can still submit
+  viewingQuarter: 0,       // what's on screen
+  cash: 50000,
+  score: 0,
+  decisions: [],           // per-quarter: { ... slider values } or { choiceId }
+  microAnswers: [],        // per-quarter: array of { optId, correct }
+  submitted: [false, false, false, false],
+  results: [null, null, null, null],       // evaluate() output for the main decision
+  tempChoice: null,        // choice selected before submit
+  tempSliders: {},
+  tempMicro: [],           // per-q current in-progress micro selections
+  exploring: null,         // { kind: 'choice'|'micro', qIdx, microIdx?, optId }
+};
+
+// ---------------------------------------------------------------------------
+// RENDER HELPERS
+// ---------------------------------------------------------------------------
+
+const $ = (sel, root = document) => root.querySelector(sel);
+const el = (tag, props = {}, ...children) => {
+  const n = document.createElement(tag);
+  for (const [k, v] of Object.entries(props)) {
+    if (k === 'className') n.className = v;
+    else if (k === 'html') n.innerHTML = v;
+    else if (k.startsWith('on')) n.addEventListener(k.slice(2).toLowerCase(), v);
+    else if (k === 'style' && typeof v === 'object') Object.assign(n.style, v);
+    else if (v !== undefined && v !== null && v !== false) n.setAttribute(k, v === true ? '' : String(v));
+  }
+  for (const c of children) {
+    if (c == null || c === false) continue;
+    n.appendChild(typeof c === 'string' ? document.createTextNode(c) : c);
+  }
+  return n;
+};
+
+const liveAnnounce = (msg) => {
+  const r = $('#live-region');
+  if (!r) return;
+  r.textContent = '';
+  setTimeout(() => { r.textContent = msg; }, 50);
+};
+
+// ---------------------------------------------------------------------------
+// SCREENS
+// ---------------------------------------------------------------------------
+
+function renderStart() {
+  const root = $('#screens');
+  root.innerHTML = '';
+  const wrap = el('section', { className: 'screen start-wrap', 'aria-labelledby': 'game-title' });
+
+  wrap.appendChild(el('div', { className: 'eyebrow' }, 'An accounting simulation'));
+  wrap.appendChild(el('h1', { className: 'title', id: 'game-title', html: 'Budget <em>Boss</em>' }));
+  wrap.appendChild(el('p', { className: 'tagline' },
+    'Run a year at Crestline Coffee Co. Build a budget, work through variances, separate profit from cash, and defend next year\'s plan.'
+  ));
+
+  const setup = el('div', { className: 'setup-card' });
+  setup.appendChild(el('h2', { html: 'You are the new <em>General Manager</em>' }));
+  setup.appendChild(el('p', { html: 'Crestline Coffee Co. is a three-year-old specialty roaster with a café and growing wholesale business. You report to a small ownership group and run the budget through four quarters.' }));
+
+  const facts = el('div', { className: 'biz-facts' });
+  [
+    ['Last year revenue', '$480,000'],
+    ['Gross margin', '~60%'],
+    ['Operating income', 'Break-even'],
+    ['Team', '4 baristas, 1 manager'],
+  ].forEach(([l, v]) => {
+    const f = el('div', { className: 'biz-fact' });
+    f.appendChild(el('div', { className: 'biz-fact-label' }, l));
+    f.appendChild(el('div', { className: 'biz-fact-val' }, v));
+    facts.appendChild(f);
+  });
+  setup.appendChild(facts);
+  wrap.appendChild(setup);
+
+  const obj = el('div', { className: 'learning-obj' });
+  [
+    ['Q1 — Budgeting', 'Set a defensible annual plan. Navigate optimism bias.'],
+    ['Q2 — Variances', 'Identify what\'s favorable, what\'s unfavorable, and own the OI impact.'],
+    ['Q3 — Cash flow', 'See why profit ≠ cash when receivables and prepaid inventory grow.'],
+    ['Q4 — Rebuilding', 'Anchor next year\'s plan to actuals, not to wishes.'],
+  ].forEach(([t, d]) => {
+    const i = el('div', { className: 'learning-obj-item' });
+    i.appendChild(el('strong', {}, t));
+    i.appendChild(el('span', {}, d));
+    obj.appendChild(i);
+  });
+  wrap.appendChild(obj);
+
+  const actions = el('div', { className: 'actions', style: { justifyContent: 'center' } });
+  const startBtn = el('button', {
+    className: 'btn', type: 'button',
+    onclick: () => { state.started = true; state.activeQuarter = 0; state.viewingQuarter = 0; render(); }
+  }, 'Start the year →');
+  actions.appendChild(startBtn);
+  wrap.appendChild(actions);
+
+  root.appendChild(wrap);
+}
+
+function renderHeader() {
+  const header = el('header', { className: 'site-header' });
+  const inner = el('div', { className: 'site-header-inner' });
+
+  // Metric strip
+  const metrics = el('div', { className: 'metric-strip', role: 'group', 'aria-label': 'Game metrics' });
+  const qShown = state.viewingQuarter + 1;
+  [
+    ['Quarter', 'Q' + qShown + ' / 4', ''],
+    ['Cash on hand', fmt(state.cash), state.cash < 0 ? 'neg' : state.cash > 50000 ? 'pos' : ''],
+    ['Score', state.score + ' / 100', ''],
+    ['Progress', state.submitted.filter(Boolean).length + ' / 4', ''],
+  ].forEach(([l, v, cls]) => {
+    const m = el('div', { className: 'metric' });
+    m.appendChild(el('div', { className: 'metric-label' }, l));
+    m.appendChild(el('div', { className: 'metric-val' + (cls ? ' ' + cls : '') }, v));
+    metrics.appendChild(m);
+  });
+  inner.appendChild(metrics);
+
+  // Breadcrumb
+  const bc = el('nav', { className: 'breadcrumb', 'aria-label': 'Quarter navigation' });
+  bc.appendChild(el('span', { className: 'breadcrumb-label' }, 'Quarters'));
+  for (let i = 0; i < 4; i++) {
+    const submitted = state.submitted[i];
+    const isActive = i === state.activeQuarter && !state.finished;
+    const isViewing = i === state.viewingQuarter;
+    let dataState;
+    if (isViewing && submitted && i !== state.activeQuarter) dataState = 'reviewing';
+    else if (isViewing) dataState = 'active';
+    else if (submitted) dataState = 'visited';
+    else dataState = 'locked';
+
+    const disabled = !submitted && !isActive;
+    const label = 'Q' + (i + 1) + (submitted && state.results[i] ? ' — ' + state.results[i].points + ' pts' : '');
+    const btn = el('button', {
+      type: 'button',
+      className: 'bc-dot',
+      'data-state': dataState,
+      'aria-current': isViewing ? 'step' : null,
+      disabled: disabled,
+      onclick: () => {
+        if (disabled) return;
+        state.viewingQuarter = i;
+        state.exploring = null;
+        render();
+      }
+    }, 'Q' + (i + 1), submitted && state.results[i] ? el('span', { className: 'mini-score' }, '· ' + state.results[i].points) : null);
+    bc.appendChild(btn);
+  }
+  inner.appendChild(bc);
+
+  header.appendChild(inner);
+  return header;
+}
+
+function renderQuarter() {
+  const root = $('#screens');
+  root.innerHTML = '';
+
+  const qIdx = state.viewingQuarter;
+  const q = QUARTERS[qIdx];
+  const isReview = qIdx !== state.activeQuarter && state.submitted[qIdx];
+  const locked = state.submitted[qIdx];
+
+  const screen = el('section', { className: 'screen', 'aria-labelledby': 'q-heading' });
+  screen.appendChild(renderHeader());
+
+  // Quarter header
+  const qh = el('div', { className: 'quarter-header' });
+  qh.appendChild(el('div', {}, el('div', { className: 'quarter-sub' }, q.subtitle),
+    el('h2', { className: 'quarter-label', id: 'q-heading', html: 'Quarter <em>' + q.n + '</em>' })));
+  qh.appendChild(el('div', {},
+    el('span', { className: 'tag ' + (locked ? 'tag-success' : 'tag-ghost') },
+      locked ? 'Submitted' : 'In progress')
+  ));
+  screen.appendChild(qh);
+
+  if (isReview) {
+    const banner = el('div', { className: 'review-banner', role: 'status' });
+    banner.appendChild(el('div', { html: '<strong>Review mode.</strong> You\'re viewing a submitted quarter. Answers are locked — click other options to preview what would have happened.' }));
+    banner.appendChild(el('button', {
+      type: 'button', className: 'btn btn-ghost btn-sm',
+      onclick: () => { state.viewingQuarter = state.activeQuarter; state.exploring = null; render(); }
+    }, 'Return to current →'));
+    screen.appendChild(banner);
+  }
+
+  // Scenario
+  const scenHTML = typeof q.scenario === 'function' ? q.scenario(state) : q.scenario;
+  const scen = el('section', { className: 'scenario', 'aria-label': 'Scenario' });
+  scen.innerHTML = scenHTML;
+  screen.appendChild(scen);
+
+  // Concept
+  const concept = el('aside', { className: 'concept', 'aria-label': 'Key concept' });
+  concept.appendChild(el('div', { className: 'concept-title' }, 'Concept'));
+  concept.appendChild(el('div', { className: 'concept-body', html: q.concept.title.replace(/^Concept — /, '') + '. ' + q.concept.body }));
+  if (q.concept.note) concept.appendChild(el('div', { className: 'concept-note', html: q.concept.note }));
+  screen.appendChild(concept);
+
+  // Micro questions
+  if (q.micro) {
+    const micro = typeof q.micro === 'function' ? q.micro(state) : q.micro;
+    screen.appendChild(el('h3', { className: 'section-h' }, 'Check your understanding (' + micro.length + ' questions · 5 pts)'));
+    const mb = el('div', { className: 'micro-block' });
+    micro.forEach((mq, mi) => mb.appendChild(renderMicroQ(mq, mi, qIdx, locked)));
+    screen.appendChild(mb);
+  }
+
+  // Main decision heading
+  screen.appendChild(el('h3', { className: 'section-h' }, 'Your decision (20 pts)'));
+
+  // Decision area
+  if (q.decision.kind === 'sliders') {
+    screen.appendChild(renderSliderDecision(q, qIdx, locked));
+  } else {
+    screen.appendChild(renderChoiceDecision(q, qIdx, locked));
+  }
+
+  // Actions
+  if (!locked) {
+    const actions = el('div', { className: 'actions' });
+    const submitBtn = el('button', {
+      className: 'btn', type: 'button', id: 'submit-btn',
+      disabled: !canSubmit(qIdx) ? true : false,
+      onclick: () => submitQuarter(qIdx),
+    }, 'Submit Quarter ' + q.n + ' →');
+    actions.appendChild(submitBtn);
+    if (!canSubmit(qIdx)) {
+      actions.appendChild(el('div', { className: 'hint' },
+        q.decision.kind === 'sliders'
+          ? 'Set each slider, then submit.'
+          : 'Answer each check-your-understanding question and pick your strategy, then submit.'
+      ));
+    }
+    screen.appendChild(actions);
+  }
+
+  // Result (submitted OR exploring)
+  const submittedResult = locked ? state.results[qIdx] : null;
+  if (submittedResult) {
+    screen.appendChild(renderResult(qIdx, submittedResult, false));
+  }
+  // What-if overlay
+  if (locked && state.exploring && state.exploring.qIdx === qIdx && state.exploring.kind === 'choice') {
+    const wi = computeExploreResult(qIdx);
+    if (wi) screen.appendChild(renderResult(qIdx, wi, true));
+  }
+
+  // Final-quarter next: finalize
+  if (locked && qIdx === 3 && !state.finished) {
+    const fin = el('div', { className: 'actions' });
+    fin.appendChild(el('button', {
+      className: 'btn', type: 'button',
+      onclick: () => { state.finished = true; render(); }
+    }, 'See year-end summary →'));
+    screen.appendChild(fin);
+  } else if (locked && qIdx < 3 && qIdx === state.activeQuarter) {
+    const next = el('div', { className: 'actions' });
+    next.appendChild(el('button', {
+      className: 'btn', type: 'button',
+      onclick: () => {
+        state.activeQuarter = qIdx + 1;
+        state.viewingQuarter = qIdx + 1;
+        state.tempChoice = null;
+        state.tempSliders = {};
+        state.tempMicro = [];
+        state.exploring = null;
+        render();
+      }
+    }, 'Continue to Quarter ' + (qIdx + 2) + ' →'));
+    screen.appendChild(next);
+  }
+
+  root.appendChild(screen);
+  handleScrollAfterRender();
+}
+
+function renderMicroQ(mq, mi, qIdx, locked) {
+  const wrap = el('div', { className: 'micro-q' });
+  const label = el('div', { className: 'micro-q-prompt' });
+  label.innerHTML = '<span class="micro-q-index">Q' + (mi + 1) + '</span>' + mq.prompt;
+  wrap.appendChild(label);
+
+  const opts = el('div', { className: 'micro-opts', role: 'radiogroup', 'aria-label': 'Answers' });
+  mq.opts.forEach(opt => {
+    let cls = 'micro-opt';
+    let stateTag = '';
+    if (locked) {
+      const picked = state.microAnswers[qIdx] && state.microAnswers[qIdx][mi] && state.microAnswers[qIdx][mi].optId === opt.id;
+      if (opt.correct) { cls += ' correct'; stateTag = picked ? '✓ Your answer · Correct' : 'Correct answer'; }
+      else if (picked) { cls += ' wrong'; stateTag = '✗ Your answer'; }
+      // exploring preview
+      if (state.exploring && state.exploring.kind === 'micro' && state.exploring.qIdx === qIdx
+        && state.exploring.microIdx === mi && state.exploring.optId === opt.id) {
+        cls += ' exploring';
+      }
+    } else {
+      const picked = state.tempMicro[mi] === opt.id;
+      if (picked) cls += '';
+    }
+    const btn = el('button', {
+      type: 'button',
+      className: cls,
+      role: 'radio',
+      'aria-checked': (!locked && state.tempMicro[mi] === opt.id) ? 'true' : 'false',
+      disabled: locked && false, // still clickable in locked mode for what-if
+      onclick: () => {
+        if (locked) {
+          state.exploring = { kind: 'micro', qIdx, microIdx: mi, optId: opt.id };
+          render();
+        } else {
+          state.tempMicro[mi] = opt.id;
+          render();
+        }
+      }
+    });
+    const marker = el('span', { className: 'opt-marker', 'aria-hidden': 'true' }, opt.correct && locked ? '✓' : (locked && state.microAnswers[qIdx] && state.microAnswers[qIdx][mi] && state.microAnswers[qIdx][mi].optId === opt.id && !opt.correct ? '✗' : ''));
+    btn.appendChild(marker);
+    const text = el('span', { className: 'opt-text', html: opt.text });
+    btn.appendChild(text);
+    if (stateTag) btn.appendChild(el('span', { className: 'opt-tag' }, stateTag));
+    opts.appendChild(btn);
+  });
+  wrap.appendChild(opts);
+
+  // Feedback when locked
+  if (locked) {
+    // If exploring this question, show that opt's explain
+    if (state.exploring && state.exploring.kind === 'micro' && state.exploring.qIdx === qIdx && state.exploring.microIdx === mi) {
+      const opt = mq.opts.find(o => o.id === state.exploring.optId);
+      if (opt) {
+        wrap.appendChild(el('div', { className: 'micro-feedback exploring', html: '<strong>What-if · ' + (opt.correct ? 'Correct:' : 'This is the trap:') + '</strong> ' + opt.explain }));
+      }
+    } else {
+      // Show the player's own answer explanation
+      const picked = state.microAnswers[qIdx] && state.microAnswers[qIdx][mi];
+      if (picked) {
+        const opt = mq.opts.find(o => o.id === picked.optId);
+        if (opt) wrap.appendChild(el('div', { className: 'micro-feedback', html: opt.explain }));
+      }
+    }
+  }
+
+  return wrap;
+}
+
+function renderSliderDecision(q, qIdx, locked) {
+  const wrap = el('div', { className: 'decisions' });
+  q.decision.inputs.forEach(inp => {
+    wrap.appendChild(buildSlider(inp, qIdx, locked));
+  });
+  return wrap;
+}
+
+function buildSlider(inp, qIdx, locked) {
+  const row = el('div', { className: 'slider-row' });
+  const head = el('div', { className: 'slider-head' });
+  const meta = el('div');
+  meta.appendChild(el('label', { className: 'slider-label', for: 'num-' + inp.id }, inp.label));
+  meta.appendChild(el('div', { className: 'slider-desc' }, inp.desc));
+  head.appendChild(meta);
+
+  // Determine current value
+  let val;
+  if (locked) val = state.decisions[qIdx][inp.id];
+  else if (state.tempSliders[inp.id] != null) val = state.tempSliders[inp.id];
+  else val = inp.default;
+
+  const valWrap = el('div', { className: 'slider-value-wrap' });
+  if (!inp.isPercent) valWrap.appendChild(el('span', { className: 'slider-prefix' }, '$'));
+  const numInput = el('input', {
+    type: 'number',
+    inputmode: 'numeric',
+    className: 'slider-num-input',
+    id: 'num-' + inp.id,
+    min: inp.min,
+    max: inp.max,
+    step: 1,
+    value: val,
+    'aria-label': inp.label + ' numeric input',
+    disabled: locked,
+  });
+  valWrap.appendChild(numInput);
+  if (inp.isPercent) valWrap.appendChild(el('span', { className: 'slider-suffix' }, '%'));
+  head.appendChild(valWrap);
+  row.appendChild(head);
+
+  const range = el('input', {
+    type: 'range',
+    min: inp.min,
+    max: inp.max,
+    step: inp.step,
+    value: val,
+    'aria-label': inp.label,
+    disabled: locked,
+  });
+  row.appendChild(range);
+
+  const hint = el('div', { className: 'slider-range-hint' });
+  hint.appendChild(el('span', {}, inp.isPercent ? inp.min + '%' : fmt(inp.min)));
+  hint.appendChild(el('span', {}, inp.isPercent ? inp.max + '%' : fmt(inp.max)));
+  row.appendChild(hint);
+
+  if (!locked) {
+    range.addEventListener('input', (e) => {
+      const v = parseInt(e.target.value, 10);
+      state.tempSliders[inp.id] = v;
+      numInput.value = v;
+      updateSubmitState();
+    });
+    numInput.addEventListener('input', (e) => {
+      const raw = e.target.value;
+      if (raw === '') return;
+      const v = parseInt(raw, 10);
+      if (Number.isNaN(v)) return;
+      state.tempSliders[inp.id] = v;
+      range.value = Math.min(Math.max(v, inp.min), inp.max);
+      updateSubmitState();
+    });
+    numInput.addEventListener('blur', (e) => {
+      let v = parseInt(e.target.value, 10);
+      if (Number.isNaN(v)) v = inp.default;
+      v = Math.min(Math.max(v, inp.min), inp.max);
+      state.tempSliders[inp.id] = v;
+      numInput.value = v;
+      range.value = v;
+      updateSubmitState();
+    });
+    // initialize
+    if (state.tempSliders[inp.id] == null) state.tempSliders[inp.id] = inp.default;
+  }
+
+  return row;
+}
+
+function renderChoiceDecision(q, qIdx, locked) {
+  const wrap = el('div', { className: 'decisions' });
+  if (q.decision.prompt) {
+    wrap.appendChild(el('p', { className: 'slider-desc', style: { marginBottom: 'var(--s-3)' }, html: q.decision.prompt }));
+  }
+  const group = el('div', { className: 'choice-group', role: 'radiogroup', 'aria-label': 'Strategic options' });
+  q.decision.options.forEach(opt => {
+    const submittedId = locked ? state.decisions[qIdx].choiceId : null;
+    let cls = 'choice';
+    let titleChildren = [];
+    if (locked) {
+      if (opt.id === submittedId) {
+        cls += ' submitted-answer';
+      }
+      if (state.exploring && state.exploring.kind === 'choice' && state.exploring.qIdx === qIdx && state.exploring.optId === opt.id) {
+        cls += ' exploring';
+      }
+    } else {
+      if (state.tempChoice === opt.id) cls += '';
+    }
+    titleChildren.push(el('span', { html: opt.title }));
+    if (locked && opt.id === submittedId) {
+      titleChildren.push(el('span', { className: 'your-badge' }, '✓ Your answer'));
+    }
+
+    const btn = el('button', {
+      type: 'button',
+      className: cls,
+      role: 'radio',
+      'aria-checked': (!locked && state.tempChoice === opt.id) ? 'true' : 'false',
+      onclick: () => {
+        if (locked) {
+          if (opt.id === submittedId) {
+            // clicking your own answer clears exploring
+            state.exploring = null;
+          } else {
+            state.exploring = { kind: 'choice', qIdx, optId: opt.id };
+          }
+          render();
+        } else {
+          state.tempChoice = opt.id;
+          render();
+        }
+      }
+    });
+    btn.appendChild(el('div', { className: 'choice-title' }, ...titleChildren));
+    btn.appendChild(el('div', { className: 'choice-desc' }, opt.desc));
+    group.appendChild(btn);
+  });
+  wrap.appendChild(group);
+
+  if (locked) {
+    wrap.appendChild(el('div', { className: 'explore-hint',
+      html: '<strong>What-if mode.</strong> Click any other option above to preview how that decision would have played out. Your score is locked — exploration is for learning only.'
+    }));
+  }
+
+  return wrap;
+}
+
+function renderResult(qIdx, result, isExplore) {
+  const card = el('div', { className: 'result' + (isExplore ? ' exploring' : ''), role: 'region', 'aria-label': isExplore ? 'What-if preview' : 'Quarter result' });
+  const head = el('div', { className: 'result-head' });
+  if (isExplore) {
+    head.appendChild(el('span', { className: 'tag tag-caramel' }, 'What-if preview'));
+  } else {
+    head.appendChild(el('span', { className: 'tag ' + result.tone }, result.points + ' pts'));
+  }
+  head.appendChild(el('h3', {}, result.title));
+  card.appendChild(head);
+
+  const body = el('div', { className: 'result-body' });
+  body.appendChild(el('p', { html: result.body }));
+  card.appendChild(body);
+
+  if (result.breakdown && result.breakdown.length) {
+    const bd = el('div', { className: 'breakdown' });
+    bd.appendChild(el('div', { className: 'breakdown-title' }, isExplore ? 'Hypothetical breakdown' : 'Breakdown'));
+    result.breakdown.forEach(row => {
+      const r = el('div', { className: 'breakdown-row' + (row.total ? ' total' : '') });
+      const lbl = el('div', { className: 'breakdown-label', html: row.label + (row.note ? ' <span style="color:var(--text-faint); font-size: 11px;">(' + row.note + ')</span>' : '') });
+      r.appendChild(lbl);
+      const val = el('div', { className: 'breakdown-val ' + (row.cls || '') },
+        row.val === 0 && row.note && !row.total ? '—' : fmtSigned(row.val)
+      );
+      if (row.tag) {
+        const tg = el('span', { html: row.tag, style: { marginLeft: 'var(--s-2)' } });
+        r.appendChild(val);
+        r.appendChild(tg);
+      } else {
+        r.appendChild(val);
+      }
+      bd.appendChild(r);
+    });
+    card.appendChild(bd);
+  }
+
+  if (result.why) {
+    const w = el('div', { className: 'why-matters' });
+    w.appendChild(el('strong', {}, 'Why this matters'));
+    w.appendChild(el('span', { html: result.why }));
+    card.appendChild(w);
+  }
+
+  return card;
+}
+
+function computeExploreResult(qIdx) {
+  if (!state.exploring || state.exploring.kind !== 'choice' || state.exploring.qIdx !== qIdx) return null;
+  const q = QUARTERS[qIdx];
+  if (q.decision.kind !== 'choice') return null;
+  const choice = q.decision.options.find(o => o.id === state.exploring.optId);
+  if (!choice) return null;
+  return q.decision.evaluate(choice, state);
+}
+
+// ---------------------------------------------------------------------------
+// SUBMIT / SCORING
+// ---------------------------------------------------------------------------
+
+function canSubmit(qIdx) {
+  const q = QUARTERS[qIdx];
+  const microCount = typeof q.micro === 'function' ? q.micro(state).length : (q.micro ? q.micro.length : 0);
+  for (let i = 0; i < microCount; i++) {
+    if (!state.tempMicro[i]) return false;
+  }
+  if (q.decision.kind === 'sliders') {
+    for (const inp of q.decision.inputs) {
+      if (state.tempSliders[inp.id] == null) return false;
+    }
+    return true;
+  }
+  return !!state.tempChoice;
+}
+
+function updateSubmitState() {
+  const btn = document.getElementById('submit-btn');
+  if (!btn) return;
+  btn.disabled = !canSubmit(state.activeQuarter);
+}
+
+function submitQuarter(qIdx) {
+  if (!canSubmit(qIdx)) return;
+  const q = QUARTERS[qIdx];
+
+  // Score micros (5 pts total, distributed evenly)
+  const microQs = typeof q.micro === 'function' ? q.micro(state) : (q.micro || []);
+  const perQ = microQs.length > 0 ? 5 / microQs.length : 0;
+  let microScore = 0;
+  const answers = [];
+  microQs.forEach((mq, i) => {
+    const picked = state.tempMicro[i];
+    const opt = mq.opts.find(o => o.id === picked);
+    const correct = !!(opt && opt.correct);
+    if (correct) microScore += perQ;
+    answers.push({ optId: picked, correct });
+  });
+  microScore = Math.round(microScore);
+  state.microAnswers[qIdx] = answers;
+
+  // Score main decision
+  let result;
+  if (q.decision.kind === 'sliders') {
+    state.decisions[qIdx] = { ...state.tempSliders };
+    result = q.decision.evaluate(state.tempSliders, state);
+  } else {
+    const choice = q.decision.options.find(o => o.id === state.tempChoice);
+    state.decisions[qIdx] = { choiceId: state.tempChoice };
+    result = q.decision.evaluate(choice, state);
+  }
+
+  // Add the micro points onto the result
+  result.points = (result.points || 0) + microScore;
+  result.microScore = microScore;
+  result.microMax = 5;
+  // Append micro note to result body
+  if (microQs.length) {
+    result.body = '<span style="font-size: var(--fs-sm); color: var(--text-muted);">Check-your-understanding: <strong>' + microScore + ' / 5 pts</strong></span><br><br>' + result.body;
+  }
+
+  state.results[qIdx] = result;
+  state.submitted[qIdx] = true;
+  state.score += result.points;
+
+  // Update cash per quarter (narrative approx)
+  if (qIdx === 0) state.cash += 0;
+  else if (qIdx === 1) state.cash += Math.round((118000 - 51000 - 30000)); // rough Q2 cash
+  else if (qIdx === 2) state.cash += -37000;
+  else state.cash += 40000;
+
+  // Clear temp
+  state.tempChoice = null;
+  state.tempSliders = {};
+  state.tempMicro = [];
+  state.exploring = null;
+
+  liveAnnounce('Quarter submitted. ' + result.points + ' points earned.');
+  pendingScroll = 'result';
+  render();
+}
+
+// ---------------------------------------------------------------------------
+// FINAL SCREEN
+// ---------------------------------------------------------------------------
+
+function renderFinal() {
+  const root = $('#screens');
+  root.innerHTML = '';
+
+  const screen = el('section', { className: 'screen final-wrap', 'aria-labelledby': 'final-heading' });
+  screen.appendChild(renderHeader());
+
+  screen.appendChild(el('div', { className: 'eyebrow' }, 'Year-end close'));
+  screen.appendChild(el('h2', { className: 'quarter-label', id: 'final-heading', html: 'Your <em>Year</em>' }));
+
+  const score = state.score;
+  const scoreEl = el('div', { className: 'final-score' });
+  scoreEl.textContent = String(score);
+  scoreEl.appendChild(el('span', { className: 'final-score-of' }, ' / 100'));
+  screen.appendChild(scoreEl);
+
+  let rating;
+  if (score >= 85) rating = 'An FP&A-ready year.';
+  else if (score >= 70) rating = 'Solid — with a few fixable gaps.';
+  else if (score >= 50) rating = 'Passable, but the fundamentals need another pass.';
+  else rating = 'Time to re-read the chapter.';
+  screen.appendChild(el('div', { className: 'final-rating' }, rating));
+
+  // Summary cards
+  const summary = el('div', { className: 'final-summary' });
+  for (let i = 0; i < 4; i++) {
+    const r = state.results[i];
+    const card = el('div', { className: 'final-card' });
+    card.appendChild(el('div', { className: 'final-card-label' }, 'Quarter ' + (i + 1)));
+    card.appendChild(el('div', { className: 'final-card-val' }, r ? r.points + ' pts' : '—'));
+    if (r) card.appendChild(el('div', { className: 'final-card-note', html: r.title }));
+    summary.appendChild(card);
+  }
+  screen.appendChild(summary);
+
+  // Lessons
+  const lessons = el('div', { className: 'final-lessons' });
+  lessons.appendChild(el('h3', {}, 'What this year taught you'));
+  const ul = el('ul');
+  [
+    'A budget is a forecast and a commitment. Over-anchoring to a growth target guarantees future variances.',
+    'The F/U sign convention flips between revenue and costs. Net OI impact = Rev variance minus Cost variance — that second minus is where the exam points live.',
+    '<strong>Profit ≠ Cash.</strong> A/R and prepaid inventory both drain cash while income looks fine. Indirect method tells the real story.',
+    'Next year\'s budget should anchor on this year\'s actuals, adjusted for known changes — not on a target worked backwards from a number someone wants.',
+  ].forEach(l => ul.appendChild(el('li', { html: l })));
+  lessons.appendChild(ul);
+  screen.appendChild(lessons);
+
+  // Actions
+  const actions = el('div', { className: 'actions', style: { justifyContent: 'center' } });
+  actions.appendChild(el('button', {
+    className: 'btn-ghost btn', type: 'button',
+    onclick: () => { state.viewingQuarter = 0; state.finished = false; render(); },
+  }, '← Review quarters'));
+  actions.appendChild(el('button', {
+    className: 'btn', type: 'button',
+    onclick: () => {
+      // Hard reset
+      Object.assign(state, {
+        started: false, finished: false, activeQuarter: 0, viewingQuarter: 0,
+        cash: 50000, score: 0, decisions: [], microAnswers: [],
+        submitted: [false, false, false, false], results: [null,null,null,null],
+        tempChoice: null, tempSliders: {}, tempMicro: [], exploring: null,
+      });
+      render();
+    }
+  }, 'Play again →'));
+  screen.appendChild(actions);
+
+  root.appendChild(screen);
+  handleScrollAfterRender();
+}
+
+// ---------------------------------------------------------------------------
+// ROOT RENDER
+// ---------------------------------------------------------------------------
+
+function render() {
+  if (!state.started) return renderStart();
+  if (state.finished) return renderFinal();
+  return renderQuarter();
+}
+
+/* Scroll behavior — only scroll on screen transitions or explicit submit.
+   In-place interactions (selecting a micro option, toggling a choice, what-if
+   preview) preserve scroll position so the page flows naturally section to
+   section. */
+let prevScreenKey = null;
+let pendingScroll = null; // 'result' | 'nextSection' | null
+
+function currentScreenKey() {
+  if (!state.started) return 'start';
+  if (state.finished) return 'final';
+  return 'q' + state.viewingQuarter;
+}
+
+function handleScrollAfterRender() {
+  const key = currentScreenKey();
+  const screenChanged = prevScreenKey !== null && prevScreenKey !== key;
+  prevScreenKey = key;
+
+  if (pendingScroll === 'result') {
+    pendingScroll = null;
+    requestAnimationFrame(() => {
+      const res = document.querySelector('.result');
+      if (res) {
+        try { res.scrollIntoView({ block: 'start', behavior: 'smooth' }); }
+        catch { res.scrollIntoView(); }
+      }
+    });
+    return;
+  }
+  pendingScroll = null;
+
+  if (screenChanged) {
+    requestAnimationFrame(() => {
+      try { window.scrollTo({ top: 0, behavior: 'smooth' }); }
+      catch { window.scrollTo(0, 0); }
+    });
+  }
+}
+
+document.addEventListener('DOMContentLoaded', render);
+// In case this is loaded after DOMContentLoaded:
+if (document.readyState === 'interactive' || document.readyState === 'complete') render();
+</script>
+</body>
+</html>
