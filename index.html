@@ -1482,12 +1482,15 @@ const fu = (n, kind) => {
   return n >= 0 ? 'U' : 'F';
 };
 const q2Snapshot = (s) => {
+  const Q2_REVENUE_REALIZATION = 0.855; // ~14.5% revenue miss versus budget
+  const Q2_VC_BUDGET_RATIO = 0.4; // budget assumes VC at 40% of revenue
+  const Q2_VC_REALIZATION = 0.925; // actual VC comes in slightly favorable vs VC budget
   const revTarget = s.decisions[0]?.rev_target || 480000;
   const fcBudget = s.decisions[0]?.fc_budget || 290000;
   const q2Bud = Math.round(revTarget / 4);
-  const q2Actual = Math.round(q2Bud * 0.855 / 1000) * 1000; // ~14.5% revenue miss, scaled to the student's plan
-  const q2VcBud = Math.round(q2Bud * 0.4);
-  const q2VcAct = Math.round(q2VcBud * 0.925 / 1000) * 1000; // VC slightly favorable on lower volume
+  const q2Actual = Math.round(q2Bud * Q2_REVENUE_REALIZATION / 1000) * 1000; // apply revenue realization factor, then round to nearest $1,000
+  const q2VcBud = Math.round(q2Bud * Q2_VC_BUDGET_RATIO);
+  const q2VcAct = Math.round(q2VcBud * Q2_VC_REALIZATION / 1000) * 1000;
   const q2FcBud = Math.round(fcBudget / 4);
   return { q2Bud, q2Actual, q2VcBud, q2VcAct, q2FcBud };
 };
@@ -2731,7 +2734,7 @@ document.addEventListener('click', (e) => {
   const panel = document.getElementById('formulas-panel');
   if (!toggle || !panel) return;
   if (e.target === toggle || toggle.contains(e.target)) {
-    setFormulasOpen(panel.hidden, !panel.hidden);
+    setFormulasOpen(panel.hidden, false);
     return;
   }
   if (!panel.hidden && !panel.contains(e.target)) {
